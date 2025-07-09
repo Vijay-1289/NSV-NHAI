@@ -9,7 +9,7 @@ import { NotificationPanel } from '@/components/NotificationPanel';
 
 const Index = () => {
   const [selectedSegment, setSelectedSegment] = useState(null);
-  const [userRole, setUserRole] = useState('inspector'); // 'inspector' or 'supervisor'
+  const [userRole, setUserRole] = useState<'inspector' | 'supervisor'>('inspector');
   const [filters, setFilters] = useState({
     dateRange: 'today',
     distressLevel: 'all',
