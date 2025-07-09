@@ -39,17 +39,52 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
     try {
       setIsLoading(true);
       
-      // Generate realistic highway segment data for major Indian highways
-      const mockRealTimeData: Segment[] = [
+      // Comprehensive Indian highway segment data
+      const indianHighwayData: Segment[] = [
+        // National Highway 1 (Delhi-Chandigarh)
         { id: 'NH1-KM15', lat: 28.7041, lng: 77.1025, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH1-KM22', lat: 28.6139, lng: 77.2090, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH8-KM45', lat: 28.5355, lng: 77.3910, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH24-KM8', lat: 28.6692, lng: 77.4538, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH44-KM120', lat: 28.4595, lng: 77.0266, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH1-KM35', lat: 29.0588, lng: 76.8856, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 2 (Delhi-Agra-Varanasi-Kolkata)
         { id: 'NH2-KM35', lat: 28.5906, lng: 77.0424, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH2-KM165', lat: 27.1767, lng: 78.0081, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 8 (Delhi-Gurgaon-Jaipur-Mumbai)
+        { id: 'NH8-KM45', lat: 28.5355, lng: 77.3910, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH8-KM255', lat: 26.9124, lng: 75.7873, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH8-KM750', lat: 19.0760, lng: 72.8777, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 4 (Mumbai-Pune-Bangalore-Chennai)
+        { id: 'NH4-KM150', lat: 18.5204, lng: 73.8567, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH4-KM530', lat: 12.9716, lng: 77.5946, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH4-KM890', lat: 13.0827, lng: 80.2707, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 24 (Delhi-Lucknow)
+        { id: 'NH24-KM8', lat: 28.6692, lng: 77.4538, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH24-KM550', lat: 26.8467, lng: 80.9462, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 44 (Srinagar-Kanyakumari)
+        { id: 'NH44-KM120', lat: 28.4595, lng: 77.0266, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH44-KM1450', lat: 17.3850, lng: 78.4867, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'NH44-KM3745', lat: 8.0883, lng: 77.0536, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 6 (Kolkata-Mumbai)
+        { id: 'NH6-KM450', lat: 21.1458, lng: 79.0882, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 7 (Varanasi-Kanyakumari)
+        { id: 'NH7-KM350', lat: 23.2599, lng: 77.4126, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // National Highway 9 (Pune-Machilipatnam)
+        { id: 'NH9-KM280', lat: 18.2097, lng: 77.3736, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        
+        // Golden Quadrilateral segments
+        { id: 'GQ-DEL-1', lat: 28.5274, lng: 77.1387, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'GQ-MUM-1', lat: 19.0896, lng: 72.8656, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'GQ-CHE-1', lat: 13.0475, lng: 80.2584, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
+        { id: 'GQ-KOL-1', lat: 22.5726, lng: 88.3639, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
       ];
 
-      setSegments(mockRealTimeData);
+      setSegments(indianHighwayData);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching real-time data:', error);
@@ -76,52 +111,20 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
       await loader.load();
       
       const map = new (window as any).google.maps.Map(mapRef.current, {
-        center: { lat: 28.6139, lng: 77.2090 }, // Delhi center
-        zoom: 11,
-        mapTypeId: (window as any).google.maps.MapTypeId.ROADMAP,
-        styles: [
-          {
-            "featureType": "all",
-            "elementType": "geometry.fill",
-            "stylers": [{ "color": "#1f2937" }]
-          },
-          {
-            "featureType": "water",
-            "elementType": "geometry",
-            "stylers": [{ "color": "#374151" }]
-          },
-          {
-            "featureType": "road",
-            "elementType": "geometry",
-            "stylers": [{ "color": "#4b5563" }]
-          }
-        ]
+        center: { lat: 20.5937, lng: 78.9629 }, // India center
+        zoom: 5,
+        mapTypeId: (window as any).google.maps.MapTypeId.SATELLITE,
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: (window as any).google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+          position: (window as any).google.maps.ControlPosition.TOP_CENTER,
+        },
+        zoomControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
       });
 
       mapInstanceRef.current = map;
-
-      // Add developing purpose watermark
-      const watermarkDiv = document.createElement('div');
-      watermarkDiv.innerHTML = 'DEVELOPING PURPOSE ONLY';
-      watermarkDiv.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        background: rgba(239, 68, 68, 0.1);
-        color: rgba(239, 68, 68, 0.6);
-        padding: 8px 16px;
-        font-size: 24px;
-        font-weight: bold;
-        border: 2px solid rgba(239, 68, 68, 0.3);
-        border-radius: 8px;
-        pointer-events: none;
-        z-index: 1000;
-        letter-spacing: 2px;
-      `;
-      
-      map.getDiv().appendChild(watermarkDiv);
-
       updateMapMarkers();
     } catch (error) {
       console.error('Error loading Google Maps:', error);

@@ -1,14 +1,39 @@
 
 import React from 'react';
-import { Bell, Settings, User, MapPin, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Bell, Settings, User, MapPin, Activity, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 interface DashboardHeaderProps {
   userRole: 'inspector' | 'supervisor';
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          title: "Error signing out",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        navigate('/auth');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -50,6 +75,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) =>
           
           <Button variant="ghost" size="sm">
             <User className="w-5 h-5 text-slate-300" />
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-slate-300 hover:text-white"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </div>
