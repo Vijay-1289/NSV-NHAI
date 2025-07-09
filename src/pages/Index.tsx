@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import { MapView } from '@/components/MapView';
+import MapView from '@/components/MapView';
 import { MetricsPanel } from '@/components/MetricsPanel';
 import { FilterPanel } from '@/components/FilterPanel';
 import { SegmentInspector } from '@/components/SegmentInspector';
@@ -65,11 +64,7 @@ const Index = () => {
 
         {/* Main Content - Map */}
         <div className="flex-1 p-4">
-          <MapView 
-            selectedSegment={selectedSegment}
-            onSegmentSelect={setSelectedSegment}
-            filters={filters}
-          />
+          <MapView />
         </div>
 
         {/* Right Panel - Segment Inspector */}

@@ -13,7 +13,7 @@ const PAVEMENT_CONDITIONS = [
 ];
 
 const severityColor = (severity: string) => {
-  switch (severity) {
+    switch (severity) {
     case "low": return "#10b981";
     case "medium": return "#f59e0b";
     case "high": return "#f97316";
