@@ -3,7 +3,6 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, Zap, AlertTriangle, RefreshCw } from 'lucide-react';
-import highwaysGeoJson from '../data/national_highways.geojson'; // You need to provide this file or replace with a real API fetch
 
 interface Segment {
   id: string;
@@ -35,6 +34,9 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
   const [routePolyline, setRoutePolyline] = useState<any>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [highwaysGeoJson, setHighwaysGeoJson] = useState<any>(null);
+  const [highwaysLoading, setHighwaysLoading] = useState(true);
+  const [highwaysError, setHighwaysError] = useState<string | null>(null);
 
   // Google Maps API Key
   const GOOGLE_MAPS_API_KEY = 'AIzaSyDUFIDF3WwnG96bDA_uLESoF-f9mu3hw6E';
@@ -181,9 +183,28 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
     }
   }, [segments]);
 
+  // Fetch National Highways GeoJSON from a public URL
+  useEffect(() => {
+    setHighwaysLoading(true);
+    setHighwaysError(null);
+    fetch('https://raw.githubusercontent.com/datameet/road-network/master/data/india_national_highways.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch highways data');
+        return res.json();
+      })
+      .then(data => {
+        setHighwaysGeoJson(data);
+        setHighwaysLoading(false);
+      })
+      .catch(err => {
+        setHighwaysError(err.message || 'Error loading highways data');
+        setHighwaysLoading(false);
+      });
+  }, []);
+
   // Fetch and display all National Highways as polylines
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapInstanceRef.current || !highwaysGeoJson) return;
     // Remove existing highway polylines
     if (mapInstanceRef.current.highwayPolylines) {
       mapInstanceRef.current.highwayPolylines.forEach((poly: any) => poly.setMap(null));
@@ -311,6 +332,9 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
 
         {routeLoading && <div>Loading route...</div>}
         {routeError && <div style={{ color: 'red' }}>{routeError}</div>}
+
+        {highwaysLoading && <div>Loading highways...</div>}
+        {highwaysError && <div style={{ color: 'red' }}>{highwaysError}</div>}
       </div>
     </Card>
   );
