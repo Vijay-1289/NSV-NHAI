@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, Zap, AlertTriangle, RefreshCw } from 'lucide-react';
+import highwaysGeoJson from '../data/national_highways.geojson'; // You need to provide this file or replace with a real API fetch
 
 interface Segment {
   id: string;
@@ -29,72 +29,29 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
   const [segments, setSegments] = useState<Segment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [highways, setHighways] = useState<any[]>([]);
+  const [startPoint, setStartPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [endPoint, setEndPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [routePolyline, setRoutePolyline] = useState<any>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   // Google Maps API Key
   const GOOGLE_MAPS_API_KEY = 'AIzaSyDUFIDF3WwnG96bDA_uLESoF-f9mu3hw6E';
   const GEMINI_API_KEY = 'AIzaSyCtrET1QS7KMbatA3PkOdoMrPqBtCgNu9g';
 
-  // Fetch real-time highway data using Gemini API
-  const fetchRealTimeData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Comprehensive Indian highway segment data
-      const indianHighwayData: Segment[] = [
-        // National Highway 1 (Delhi-Chandigarh)
-        { id: 'NH1-KM15', lat: 28.7041, lng: 77.1025, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH1-KM35', lat: 29.0588, lng: 76.8856, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 2 (Delhi-Agra-Varanasi-Kolkata)
-        { id: 'NH2-KM35', lat: 28.5906, lng: 77.0424, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH2-KM165', lat: 27.1767, lng: 78.0081, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 8 (Delhi-Gurgaon-Jaipur-Mumbai)
-        { id: 'NH8-KM45', lat: 28.5355, lng: 77.3910, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH8-KM255', lat: 26.9124, lng: 75.7873, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH8-KM750', lat: 19.0760, lng: 72.8777, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 4 (Mumbai-Pune-Bangalore-Chennai)
-        { id: 'NH4-KM150', lat: 18.5204, lng: 73.8567, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH4-KM530', lat: 12.9716, lng: 77.5946, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH4-KM890', lat: 13.0827, lng: 80.2707, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 24 (Delhi-Lucknow)
-        { id: 'NH24-KM8', lat: 28.6692, lng: 77.4538, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH24-KM550', lat: 26.8467, lng: 80.9462, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 44 (Srinagar-Kanyakumari)
-        { id: 'NH44-KM120', lat: 28.4595, lng: 77.0266, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH44-KM1450', lat: 17.3850, lng: 78.4867, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'NH44-KM3745', lat: 8.0883, lng: 77.0536, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 6 (Kolkata-Mumbai)
-        { id: 'NH6-KM450', lat: 21.1458, lng: 79.0882, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 7 (Varanasi-Kanyakumari)
-        { id: 'NH7-KM350', lat: 23.2599, lng: 77.4126, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // National Highway 9 (Pune-Machilipatnam)
-        { id: 'NH9-KM280', lat: 18.2097, lng: 77.3736, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        
-        // Golden Quadrilateral segments
-        { id: 'GQ-DEL-1', lat: 28.5274, lng: 77.1387, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'GQ-MUM-1', lat: 19.0896, lng: 72.8656, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'GQ-CHE-1', lat: 13.0475, lng: 80.2584, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-        { id: 'GQ-KOL-1', lat: 22.5726, lng: 88.3639, iri: Math.random() * 8 + 2, crackIndex: Math.random() * 50, rutting: Math.random() * 40, severity: Math.random() > 0.7 ? 'critical' : Math.random() > 0.5 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low', timestamp: new Date().toISOString() },
-      ];
-
-      setSegments(indianHighwayData);
-      setLastUpdated(new Date());
-    } catch (error) {
-      console.error('Error fetching real-time data:', error);
-      // Fallback to mock data
-      setSegments([
-        { id: 'NH1-KM15', lat: 28.7041, lng: 77.1025, iri: 3.2, crackIndex: 15, rutting: 8, severity: 'medium', timestamp: new Date().toISOString() },
-        { id: 'NH1-KM22', lat: 28.6139, lng: 77.2090, iri: 5.8, crackIndex: 35, rutting: 22, severity: 'high', timestamp: new Date().toISOString() },
-      ]);
-    } finally {
-      setIsLoading(false);
+  // Placeholder for fetching all highways and routing
+  const handleMapClick = (e: any) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    if (!startPoint) {
+      setStartPoint({ lat, lng });
+    } else if (!endPoint) {
+      setEndPoint({ lat, lng });
+      // After both points are set, call Bhuvan routing API (to be implemented)
+    } else {
+      setStartPoint({ lat, lng });
+      setEndPoint(null);
     }
   };
 
@@ -125,6 +82,7 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
       });
 
       mapInstanceRef.current = map;
+      map.addListener('click', handleMapClick);
       updateMapMarkers();
     } catch (error) {
       console.error('Error loading Google Maps:', error);
@@ -205,7 +163,7 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchRealTimeData();
+      // Placeholder for fetching all highways and routing
     }, 30000);
 
     return () => clearInterval(interval);
@@ -213,7 +171,6 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
 
   // Initial data fetch and map initialization
   useEffect(() => {
-    fetchRealTimeData();
     initializeMap();
   }, []);
 
@@ -223,6 +180,69 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
       updateMapMarkers();
     }
   }, [segments]);
+
+  // Fetch and display all National Highways as polylines
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    // Remove existing highway polylines
+    if (mapInstanceRef.current.highwayPolylines) {
+      mapInstanceRef.current.highwayPolylines.forEach((poly: any) => poly.setMap(null));
+    }
+    // Draw new polylines from GeoJSON
+    const polylines: any[] = [];
+    highwaysGeoJson.features.forEach((feature: any) => {
+      if (feature.geometry.type === 'LineString') {
+        const path = feature.geometry.coordinates.map(([lng, lat]: [number, number]) => ({ lat, lng }));
+        const polyline = new (window as any).google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: '#1976d2',
+          strokeOpacity: 0.7,
+          strokeWeight: 4,
+          map: mapInstanceRef.current,
+        });
+        polylines.push(polyline);
+      }
+    });
+    mapInstanceRef.current.highwayPolylines = polylines;
+  }, [highwaysGeoJson, mapInstanceRef.current]);
+
+  // Fetch and display route when two points are selected
+  useEffect(() => {
+    if (!startPoint || !endPoint || !mapInstanceRef.current) return;
+    setRouteLoading(true);
+    setRouteError(null);
+    const fetchRoute = async () => {
+      try {
+        const url = `https://bhuvan-app1.nrsc.gov.in/api/routing/curl_routing_state.php?lat1=${startPoint.lat}&lon1=${startPoint.lng}&lat2=${endPoint.lat}&lon2=${endPoint.lng}&token=3265a114cf7f9f05fd03035b51dcda177e22e663`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch route');
+        const data = await res.json();
+        // Assume data.route is an array of [lat, lng] pairs
+        if (routePolyline) routePolyline.setMap(null);
+        const path = data.route.map(([lat, lng]: [number, number]) => ({ lat, lng }));
+        const polyline = new (window as any).google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: '#ff5722',
+          strokeOpacity: 0.9,
+          strokeWeight: 5,
+          map: mapInstanceRef.current,
+        });
+        setRoutePolyline(polyline);
+      } catch (err: any) {
+        setRouteError(err.message || 'Error fetching route');
+      } finally {
+        setRouteLoading(false);
+      }
+    };
+    fetchRoute();
+    // Cleanup on unmount or new route
+    return () => {
+      if (routePolyline) routePolyline.setMap(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startPoint, endPoint]);
 
   return (
     <Card className="h-full bg-slate-800/50 backdrop-blur-sm border-slate-700/50 overflow-hidden">
@@ -260,7 +280,7 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
             size="sm"
             variant="secondary"
             className="bg-slate-700/80 hover:bg-slate-600/80 text-white"
-            onClick={fetchRealTimeData}
+            onClick={initializeMap}
             disabled={isLoading}
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -288,6 +308,9 @@ export const MapView: React.FC<MapViewProps> = ({ selectedSegment, onSegmentSele
             <div className="text-xs text-slate-400">Real-time NSV data</div>
           </div>
         </div>
+
+        {routeLoading && <div>Loading route...</div>}
+        {routeError && <div style={{ color: 'red' }}>{routeError}</div>}
       </div>
     </Card>
   );
