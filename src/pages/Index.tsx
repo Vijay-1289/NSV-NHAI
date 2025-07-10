@@ -8,6 +8,10 @@ import { FilterPanel } from '@/components/FilterPanel';
 import { SegmentInspector } from '@/components/SegmentInspector';
 import { NotificationPanel } from '@/components/NotificationPanel';
 import RoutePlanner from '@/components/RoutePlanner';
+import { HighwaySearch } from '@/components/HighwaySearch';
+import { geocodeHighwayName } from '@/services/geocodeService';
+
+const GOOGLE_API_KEY = 'AIzaSyA8lpEzD_QSfrtefxiVETxsTv7lnbFeWqY';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -108,6 +112,16 @@ const Index = () => {
     return points;
   }
 
+  const handleHighwaySearch = async (highway: string) => {
+    try {
+      const { start: s, end: e } = await geocodeHighwayName(highway, GOOGLE_API_KEY);
+      setStart(s);
+      setEnd(e);
+    } catch (err: any) {
+      alert('Could not find highway: ' + (err.message || err));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
@@ -123,6 +137,7 @@ const Index = () => {
       <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
         {/* Left Panel - Metrics and Filters */}
         <div className="w-full lg:w-80 p-4 space-y-4 overflow-y-auto">
+          <HighwaySearch onSearch={handleHighwaySearch} />
           <FilterPanel filters={filters} onFiltersChange={setFilters} />
           <RoutePlanner
             onSetStart={setStart}
