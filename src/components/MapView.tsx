@@ -30,14 +30,15 @@ interface MapViewProps {
     distressLevel: string;
     location: string;
   };
+  start: [number, number] | null;
+  end: [number, number] | null;
+  route: [number, number][];
+  setStart: (coords: [number, number] | null) => void;
+  setEnd: (coords: [number, number] | null) => void;
+  setRoute: (route: [number, number][]) => void;
 }
 
-const MapView: React.FC<MapViewProps> = ({ filters }) => {
-  const [start, setStart] = useState<[number, number] | null>(null);
-  const [end, setEnd] = useState<[number, number] | null>(null);
-  const [route, setRoute] = useState<[number, number][]>([]);
-  const [highways, setHighways] = useState<any>(null);
-
+const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart, setEnd, setRoute }) => {
   // Fetch highways GeoJSON
   useEffect(() => {
     fetch(HIGHWAYS_GEOJSON_URL)
