@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      external: ['@react-google-maps/api'],
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
