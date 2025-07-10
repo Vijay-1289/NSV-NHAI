@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, DirectionsService, DirectionsRenderer, Marker } from '@react-google-maps/api';
+import type { Libraries } from '@react-google-maps/api';
 
 interface GoogleRouteMapProps {
   start: [number, number] | null;
@@ -14,10 +15,12 @@ const containerStyle = {
 
 const center = { lat: 22.9734, lng: 78.6569 };
 
+const GOOGLE_MAP_LIBRARIES: Libraries = ['places'];
+
 const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({ start, end, setRouteAnalysis }) => {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: 'AIzaSyAaQhDfUQKG-VbbCDD0hanBSm4q2S0a6SE',
-    libraries: ['places'],
+    libraries: GOOGLE_MAP_LIBRARIES,
   });
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
