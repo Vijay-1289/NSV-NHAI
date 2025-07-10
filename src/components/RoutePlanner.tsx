@@ -109,6 +109,9 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
         <div className="mt-4 p-3 bg-green-100/10 border-l-4 border-green-400 text-green-200 rounded">
           <div className="font-semibold">Fastest Route</div>
           <div className="text-xs">{fastestRouteInfo}</div>
+          <ul className="mt-2 text-green-300 text-xs list-disc list-inside">
+            <li><b>Advantages:</b> Saves time, better road conditions, fewer stops. Ideal for urgent travel.</li>
+          </ul>
         </div>
       )}
       {alternativeRoutesInfo && alternativeRoutesInfo.length > 0 && (
@@ -116,9 +119,20 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
           <div className="font-semibold text-slate-200 mb-1">Other Routes</div>
           <ul className="text-xs text-slate-300 space-y-1">
             {alternativeRoutesInfo.map((info, idx) => (
-              <li key={idx} className="bg-slate-700/50 rounded px-2 py-1">{info}</li>
+              <li key={idx} className="bg-slate-700/50 rounded px-2 py-1">
+                {info}
+                <ul className="mt-1 text-red-300 text-xs list-disc list-inside">
+                  <li><b>Disadvantages:</b> Takes longer, more fatigue, possible traffic or tolls. Not ideal for urgent trips.</li>
+                </ul>
+              </li>
             ))}
           </ul>
+        </div>
+      )}
+      {/* Spinner animation while locating */}
+      {locating && (
+        <div className="flex justify-center mt-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-400"></div>
         </div>
       )}
     </div>

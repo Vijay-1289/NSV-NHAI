@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, DirectionsService, DirectionsRenderer, Marker } from '@react-google-maps/api';
 
 interface GoogleRouteMapProps {
   start: [number, number] | null;
@@ -59,6 +59,13 @@ const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({ start, end, setRouteAna
       center={start ? { lat: start[0], lng: start[1] } : center}
       zoom={start ? 7 : 5}
     >
+      {/* Animated marker for user's location */}
+      {start && (
+        <Marker
+          position={{ lat: start[0], lng: start[1] }}
+          animation={window.google && window.google.maps ? window.google.maps.Animation.BOUNCE : undefined}
+        />
+      )}
       {request && (
         <DirectionsService
           options={request}
