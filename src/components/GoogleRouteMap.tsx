@@ -22,6 +22,17 @@ const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({ start, end, setRouteAna
 
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [request, setRequest] = useState<google.maps.DirectionsRequest | null>(null);
+  const [markerBouncing, setMarkerBouncing] = useState(false);
+
+  React.useEffect(() => {
+    if (start) {
+      setMarkerBouncing(true);
+      const timer = setTimeout(() => setMarkerBouncing(false), 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setMarkerBouncing(false);
+    }
+  }, [start]);
 
   React.useEffect(() => {
     if (start && end) {
@@ -63,7 +74,7 @@ const GoogleRouteMap: React.FC<GoogleRouteMapProps> = ({ start, end, setRouteAna
       {start && (
         <Marker
           position={{ lat: start[0], lng: start[1] }}
-          animation={window.google && window.google.maps ? window.google.maps.Animation.BOUNCE : undefined}
+          animation={markerBouncing && window.google && window.google.maps ? window.google.maps.Animation.BOUNCE : undefined}
         />
       )}
       {request && (
