@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, GeoJSON, Popup, CircleMarker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import WeatherOverlay from "./WeatherOverlay";
+import TrafficOverlay from "./TrafficOverlay";
 
 const HIGHWAYS_GEOJSON_URL = "https://raw.githubusercontent.com/datameet/road-network/master/data/india_national_highways.geojson";
 
@@ -92,6 +94,10 @@ const MapView: React.FC = () => {
           </Popup>
         </CircleMarker>
       ))}
+      {/* Weather Overlay */}
+      <WeatherOverlay center={[22.9734, 78.6569]} radius={100} gridSpacing={50} />
+      {/* Traffic Overlay (only if route exists) */}
+      {route.length > 1 && <TrafficOverlay route={route} />}
       <LocationSelector />
     </MapContainer>
   );
