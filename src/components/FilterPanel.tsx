@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Filter, RefreshCw } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { useEffect, useState } from 'react';
 
 interface FilterPanelProps {
   filters: {
@@ -15,6 +17,41 @@ interface FilterPanelProps {
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChange }) => {
+  const [highways, setHighways] = useState<string[]>([]);
+  const [highwayData, setHighwayData] = useState<any[]>([]);
+  const [selectedHighwayData, setSelectedHighwayData] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load and parse the Excel file
+    fetch('/Comparison Delhi Vadodara Pkg 9 (Road Signage).xlsx')
+      .then(res => res.arrayBuffer())
+      .then(arrayBuffer => {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(sheet);
+        setHighwayData(data);
+        // Extract unique highways from the data (assuming a 'Highway' or similar column)
+        const highwayCol = Object.keys(data[0] || {}).find(k => k.toLowerCase().includes('highway'));
+        if (highwayCol) {
+          const uniqueHighways = Array.from(new Set(data.map((row: any) => row[highwayCol])));
+          setHighways(uniqueHighways);
+        }
+      });
+  }, []);
+
+  useEffect(() => {
+    // Filter data for the selected highway
+    if (filters.location && filters.location !== 'all' && highwayData.length > 0) {
+      const highwayCol = Object.keys(highwayData[0] || {}).find(k => k.toLowerCase().includes('highway'));
+      if (highwayCol) {
+        setSelectedHighwayData(highwayData.filter((row: any) => row[highwayCol] === filters.location));
+      }
+    } else {
+      setSelectedHighwayData([]);
+    }
+  }, [filters.location, highwayData]);
+
   const updateFilter = (key: string, value: string) => {
     onFiltersChange({
       ...filters,
@@ -70,10 +107,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-600">
               <SelectItem value="all">All Highways</SelectItem>
-              <SelectItem value="nh1">NH-1 (Delhi-Amritsar)</SelectItem>
-              <SelectItem value="nh2">NH-2 (Delhi-Kolkata)</SelectItem>
-              <SelectItem value="nh4">NH-4 (Mumbai-Chennai)</SelectItem>
-              <SelectItem value="nh8">NH-8 (Delhi-Mumbai)</SelectItem>
+              {highways.map((hw) => (
+                <SelectItem key={hw} value={hw}>{hw}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -88,6 +124,30 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
           Refresh Data
         </Button>
       </CardContent>
+      {/* Pavement Condition Monitoring Data */}
+      {selectedHighwayData.length > 0 && (
+        <div className="mt-4 bg-slate-900/80 p-3 rounded text-xs text-slate-200 max-h-60 overflow-y-auto">
+          <div className="font-semibold mb-2">Pavement Condition Monitoring Data</div>
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                {Object.keys(selectedHighwayData[0]).map((col) => (
+                  <th key={col} className="pr-2 pb-1 border-b border-slate-700">{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {selectedHighwayData.map((row, idx) => (
+                <tr key={idx}>
+                  {Object.values(row).map((val, i) => (
+                    <td key={i} className="pr-2 py-1 border-b border-slate-800">{val as string}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Card>
   );
 };
