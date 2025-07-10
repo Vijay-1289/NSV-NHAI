@@ -31,9 +31,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         const sheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet);
         setHighwayData(data);
-        // Extract unique highways from the data (assuming a 'Highway' or similar column)
-        const highwayCol = Object.keys(data[0] || {}).find(k => k.toLowerCase().includes('highway'));
-        if (highwayCol) {
+        // Use the 'NH' column for highways
+        const highwayCol = 'NH';
+        if (highwayCol && data[0] && data[0][highwayCol] !== undefined) {
           const uniqueHighways = Array.from(new Set(data.map((row: any) => row[highwayCol])));
           setHighways(uniqueHighways);
         }
@@ -43,8 +43,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
   useEffect(() => {
     // Filter data for the selected highway
     if (filters.location && filters.location !== 'all' && highwayData.length > 0) {
-      const highwayCol = Object.keys(highwayData[0] || {}).find(k => k.toLowerCase().includes('highway'));
-      if (highwayCol) {
+      const highwayCol = 'NH';
+      if (highwayCol && highwayData[0] && highwayData[0][highwayCol] !== undefined) {
         setSelectedHighwayData(highwayData.filter((row: any) => row[highwayCol] === filters.location));
       }
     } else {
