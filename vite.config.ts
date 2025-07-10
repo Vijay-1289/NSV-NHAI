@@ -15,9 +15,7 @@ export default defineConfig(({ mode }) => ({
     componentTagger(),
   ].filter(Boolean),
   build: {
-    rollupOptions: {
-      external: ['@react-google-maps/api'],
-    },
+    // Removed build.rollupOptions.external to allow Vite to bundle @react-google-maps/api
   },
   resolve: {
     alias: {
