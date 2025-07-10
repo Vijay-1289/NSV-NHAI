@@ -105,33 +105,6 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
     return true;
   });
 
-  // Helper to decode Google polyline
-  function decodePolyline(encoded: string): [number, number][] {
-    let points: [number, number][] = [];
-    let index = 0, lat = 0, lng = 0;
-    while (index < encoded.length) {
-      let b, shift = 0, result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-      points.push([lat / 1e5, lng / 1e5]);
-    }
-    return points;
-  }
-
   return (
     <MapContainer center={[22.9734, 78.6569]} zoom={5} style={{ height: "80vh", width: "100%" }}>
       <TileLayer
@@ -146,7 +119,7 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
       {allRoutes && allRoutes.length > 0 && allRoutes.map((r, idx) => (
         <Polyline
           key={idx}
-          positions={decodePolyline(r.overview_polyline.points)}
+          positions={r.overview_path.map((latLng: any) => [latLng.lat(), latLng.lng()])}
           color={idx === 0 ? '#22c55e' : '#3b82f6'}
           weight={idx === 0 ? 6 : 4}
           opacity={idx === 0 ? 0.9 : 0.5}

@@ -50,21 +50,25 @@ const Index = () => {
 
   // Handler to plan routes (fetch from Google Directions API)
   const handlePlanRoutes = () => {
-    if (start && end) {
-      const GOOGLE_API_KEY = 'AIzaSyAPer6Lb73eLonZQL-tWGCR2hVFzsAMPz0';
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${start[0]},${start[1]}&destination=${end[0]},${end[1]}&alternatives=true&key=${GOOGLE_API_KEY}`;
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (data.routes && data.routes.length > 0) {
-            setAllRoutes(data.routes);
+    if (start && end && window.google && window.google.maps) {
+      const directionsService = new window.google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: { lat: start[0], lng: start[1] },
+          destination: { lat: end[0], lng: end[1] },
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          provideRouteAlternatives: true,
+        },
+        (result, status) => {
+          if (status === 'OK' && result.routes.length > 0) {
+            setAllRoutes(result.routes);
             // Fastest route is the first
-            const fastest = data.routes[0];
-            const decoded = decodePolyline(fastest.overview_polyline.points);
+            const fastest = result.routes[0];
+            const decoded = fastest.overview_path.map((latLng) => [latLng.lat(), latLng.lng()]);
             setRoute(decoded);
             // Analysis
             const fastestSummary = `Fastest: ${fastest.summary} (${fastest.legs[0].distance.text}, ${fastest.legs[0].duration.text})`;
-            const alternatives = data.routes.slice(1).map((r: any, i: number) => {
+            const alternatives = result.routes.slice(1).map((r, i) => {
               let reason = '';
               if (r.legs[0].duration.value > fastest.legs[0].duration.value) reason += 'Slower';
               if (r.legs[0].distance.value > fastest.legs[0].distance.value) reason += (reason ? ', ' : '') + 'Longer';
@@ -72,7 +76,8 @@ const Index = () => {
             });
             setRouteAnalysis({ fastest: fastestSummary, alternatives });
           }
-        });
+        }
+      );
     }
   };
 
