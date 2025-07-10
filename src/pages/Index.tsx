@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import MapView from '@/components/MapView';
+import GoogleRouteMap from '@/components/GoogleRouteMap';
 import { MetricsPanel } from '@/components/MetricsPanel';
 import { FilterPanel } from '@/components/FilterPanel';
 import { SegmentInspector } from '@/components/SegmentInspector';
@@ -135,9 +135,9 @@ const Index = () => {
           <NotificationPanel />
         </div>
 
-        {/* Main Content - Map */}
+        {/* Main Content - Google Map */}
         <div className="flex-1 p-4">
-          <MapView filters={filters} start={start} end={end} route={route} setStart={setStart} setEnd={setEnd} setRoute={setRoute} allRoutes={allRoutes} />
+          <GoogleRouteMap start={start} end={end} setRouteAnalysis={setRouteAnalysis} />
         </div>
 
         {/* Right Panel - Segment Inspector */}
