@@ -22,6 +22,8 @@ const Index = () => {
   const [start, setStart] = useState<[number, number] | null>(null);
   const [end, setEnd] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
+  const [allRoutes, setAllRoutes] = useState<any[]>([]); // Store all Google routes
+  const [routeAnalysis, setRouteAnalysis] = useState<{ fastest: string; alternatives: string[] }>({ fastest: '', alternatives: [] });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -46,18 +48,60 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Handler to plan routes (fetch from API, here mock)
+  // Handler to plan routes (fetch from Google Directions API)
   const handlePlanRoutes = () => {
     if (start && end) {
-      fetch(
-        `https://bhuvan-app1.nrsc.gov.in/api/routing/curl_routing_state.php?lat1=${start[0]}&lon1=${start[1]}&lat2=${end[0]}&lon2=${end[1]}&token=3265a114cf7f9f05fd03035b51dcda177e22e663`
-      )
+      const GOOGLE_API_KEY = 'AIzaSyAPer6Lb73eLonZQL-tWGCR2hVFzsAMPz0';
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${start[0]},${start[1]}&destination=${end[0]},${end[1]}&alternatives=true&key=${GOOGLE_API_KEY}`;
+      fetch(url)
         .then(res => res.json())
         .then(data => {
-          if (data.route) setRoute(data.route.map(([lat, lng]: [number, number]) => [lat, lng]));
+          if (data.routes && data.routes.length > 0) {
+            setAllRoutes(data.routes);
+            // Fastest route is the first
+            const fastest = data.routes[0];
+            const decoded = decodePolyline(fastest.overview_polyline.points);
+            setRoute(decoded);
+            // Analysis
+            const fastestSummary = `Fastest: ${fastest.summary} (${fastest.legs[0].distance.text}, ${fastest.legs[0].duration.text})`;
+            const alternatives = data.routes.slice(1).map((r: any, i: number) => {
+              let reason = '';
+              if (r.legs[0].duration.value > fastest.legs[0].duration.value) reason += 'Slower';
+              if (r.legs[0].distance.value > fastest.legs[0].distance.value) reason += (reason ? ', ' : '') + 'Longer';
+              return `Alt ${i+1}: ${r.summary} (${r.legs[0].distance.text}, ${r.legs[0].duration.text})${reason ? ' - ' + reason : ''}`;
+            });
+            setRouteAnalysis({ fastest: fastestSummary, alternatives });
+          }
         });
     }
   };
+
+  // Polyline decoding helper (Google encoded polyline algorithm)
+  function decodePolyline(encoded: string): [number, number][] {
+    let points: [number, number][] = [];
+    let index = 0, lat = 0, lng = 0;
+    while (index < encoded.length) {
+      let b, shift = 0, result = 0;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+    return points;
+  }
 
   if (loading) {
     return (
@@ -79,8 +123,8 @@ const Index = () => {
             onSetStart={setStart}
             onSetEnd={setEnd}
             onPlanRoutes={handlePlanRoutes}
-            fastestRouteInfo={route.length > 0 ? 'This is the fastest route based on current traffic and weather.' : undefined}
-            alternativeRoutesInfo={route.length > 0 ? ['Other routes have more traffic or rain.'] : []}
+            fastestRouteInfo={routeAnalysis.fastest}
+            alternativeRoutesInfo={routeAnalysis.alternatives}
           />
           <MetricsPanel />
           <NotificationPanel />
@@ -88,7 +132,7 @@ const Index = () => {
 
         {/* Main Content - Map */}
         <div className="flex-1 p-4">
-          <MapView filters={filters} start={start} end={end} route={route} setStart={setStart} setEnd={setEnd} setRoute={setRoute} />
+          <MapView filters={filters} start={start} end={end} route={route} setStart={setStart} setEnd={setEnd} setRoute={setRoute} allRoutes={allRoutes} />
         </div>
 
         {/* Right Panel - Segment Inspector */}
