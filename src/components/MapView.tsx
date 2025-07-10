@@ -39,6 +39,7 @@ interface MapViewProps {
 }
 
 const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart, setEnd, setRoute }) => {
+  const [highways, setHighways] = React.useState<any>(null);
   // Fetch highways GeoJSON
   useEffect(() => {
     fetch(HIGHWAYS_GEOJSON_URL)
