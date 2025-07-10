@@ -64,7 +64,7 @@ const Index = () => {
 
         {/* Main Content - Map */}
         <div className="flex-1 p-4">
-          <MapView />
+          <MapView filters={filters} />
         </div>
 
         {/* Right Panel - Segment Inspector */}

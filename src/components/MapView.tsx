@@ -24,7 +24,15 @@ const severityColor = (severity: string) => {
   }
 };
 
-const MapView: React.FC = () => {
+interface MapViewProps {
+  filters: {
+    dateRange: string;
+    distressLevel: string;
+    location: string;
+  };
+}
+
+const MapView: React.FC<MapViewProps> = ({ filters }) => {
   const [start, setStart] = useState<[number, number] | null>(null);
   const [end, setEnd] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
@@ -66,6 +74,23 @@ const MapView: React.FC = () => {
     return null;
   }
 
+  // Filter pavement conditions based on filters
+  const filteredPavementConditions = PAVEMENT_CONDITIONS.filter(pc => {
+    // Distress Level
+    if (filters.distressLevel !== 'all' && pc.severity !== filters.distressLevel) return false;
+    // Location (mock: filter by highway, e.g., nh1, nh2, etc. - here just as a placeholder)
+    if (filters.location !== 'all') {
+      // You can implement actual location filtering logic here
+      // For now, just filter by id for demo
+      if (filters.location === 'nh1' && pc.id !== 1) return false;
+      if (filters.location === 'nh2' && pc.id !== 2) return false;
+      if (filters.location === 'nh4' && pc.id !== 3) return false;
+      if (filters.location === 'nh8' && pc.id !== 4) return false;
+    }
+    // Date Range (mock: always true, as we have no date in mock data)
+    return true;
+  });
+
   return (
     <MapContainer center={[22.9734, 78.6569]} zoom={5} style={{ height: "80vh", width: "100%" }}>
       <TileLayer
@@ -77,7 +102,7 @@ const MapView: React.FC = () => {
       {end && <Marker position={end}><Popup>End Point</Popup></Marker>}
       {route.length > 0 && <Polyline positions={route} color="#ff5722" weight={4} />}
       {/* Pavement Condition Monitoring Markers */}
-      {PAVEMENT_CONDITIONS.map(pc => (
+      {filteredPavementConditions.map(pc => (
         <CircleMarker
           key={pc.id}
           center={[pc.lat, pc.lng]}
