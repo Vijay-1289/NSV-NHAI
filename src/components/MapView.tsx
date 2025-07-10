@@ -108,9 +108,8 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
   return (
     <MapContainer center={[22.9734, 78.6569]} zoom={5} style={{ height: "80vh", width: "100%" }}>
       <TileLayer
-        attribution='Map tiles by <a target="_top" rel="noopener" href="https://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="https://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="https://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
-        url="https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
-        tileSize={256}
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {highways && <GeoJSON data={highways} style={{ color: "#1976d2", weight: 2 }} />}
       {start && <Marker position={start}><Popup>Start Point</Popup></Marker>}
