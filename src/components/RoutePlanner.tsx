@@ -20,6 +20,7 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
 }) => {
   const [destination, setDestination] = useState('');
   const [locating, setLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDetectLocation = () => {
     setLocating(true);
@@ -39,21 +40,27 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
 
   const handleDestinationInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDestination(e.target.value);
+    setError(null);
   };
 
   const handleSetDestination = () => {
-    // For now, just mock: use a fixed lat/lng for demo
-    // In a real app, use geocoding API to convert address to lat/lng
-    if (destination.toLowerCase().includes('delhi')) {
-      onSetEnd([28.6139, 77.2090]);
-    } else if (destination.toLowerCase().includes('mumbai')) {
-      onSetEnd([19.0760, 72.8777]);
-    } else if (destination.toLowerCase().includes('chennai')) {
-      onSetEnd([13.0827, 80.2707]);
-    } else if (destination.toLowerCase().includes('kolkata')) {
-      onSetEnd([22.5726, 88.3639]);
+    setError(null);
+    if (!destination.trim()) {
+      setError('Please enter a destination.');
+      return;
+    }
+    if (window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: destination }, (results, status) => {
+        if (status === 'OK' && results && results.length > 0) {
+          const loc = results[0].geometry.location;
+          onSetEnd([loc.lat(), loc.lng()]);
+        } else {
+          setError('Location not found. Please enter a valid city or address.');
+        }
+      });
     } else {
-      alert('Please enter a known city (Delhi, Mumbai, Chennai, Kolkata) for demo.');
+      setError('Google Maps API not loaded.');
     }
   };
 
@@ -71,7 +78,7 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
         <label className="block text-slate-300 text-sm mb-1">Destination</label>
         <div className="flex gap-2">
           <Input
-            placeholder="Enter city (e.g. Delhi)"
+            placeholder="Enter city or address"
             value={destination}
             onChange={handleDestinationInput}
             className="flex-1 bg-slate-700 border-slate-600 text-white"
@@ -80,6 +87,7 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
             <MapPin className="w-4 h-4" />
           </Button>
         </div>
+        {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
       </div>
       <Button onClick={onPlanRoutes} className="w-full bg-green-600 hover:bg-green-700 text-white">
         Show Routes
