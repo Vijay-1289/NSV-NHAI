@@ -15,7 +15,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-const HIGHWAYS_GEOJSON_URL = "https://raw.githubusercontent.com/datameet/road-network/master/data/india_national_highways.geojson";
+// Remove highways GeoJSON fetch and state
+// Remove Bhuvan API fetch logic
+// Only keep logic for displaying Google Maps JS API routes and overlays
 
 // Example pavement condition data (replace with real API if available)
 const PAVEMENT_CONDITIONS = [
@@ -51,26 +53,10 @@ interface MapViewProps {
 }
 
 const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart, setEnd, setRoute, allRoutes }) => {
-  const [highways, setHighways] = React.useState<any>(null);
-  // Fetch highways GeoJSON
-  useEffect(() => {
-    fetch(HIGHWAYS_GEOJSON_URL)
-      .then(res => res.json())
-      .then(setHighways);
-  }, []);
-
-  // Fetch route from Bhuvan when both points are set
-  useEffect(() => {
-    if (start && end) {
-      fetch(
-        `https://bhuvan-app1.nrsc.gov.in/api/routing/curl_routing_state.php?lat1=${start[0]}&lon1=${start[1]}&lat2=${end[0]}&lon2=${end[1]}&token=3265a114cf7f9f05fd03035b51dcda177e22e663`
-      )
-        .then(res => res.json())
-        .then(data => {
-          if (data.route) setRoute(data.route.map(([lat, lng]: [number, number]) => [lat, lng]));
-        });
-    }
-  }, [start, end]);
+  // Remove highways and setHighways
+  // Remove useEffect for highways
+  // Remove useEffect for Bhuvan API route fetch
+  // Only keep logic for displaying Google Maps JS API routes and overlays
 
   // Map click handler
   function LocationSelector() {
@@ -111,10 +97,8 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
         attribution='&copy; OpenStreetMap contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {highways && <GeoJSON data={highways} style={{ color: "#1976d2", weight: 2 }} />}
       {start && <Marker position={start}><Popup>Start Point</Popup></Marker>}
       {end && <Marker position={end}><Popup>End Point</Popup></Marker>}
-      {route.length > 0 && <Polyline positions={route} color="#ff5722" weight={4} />}
       {/* Draw all Google routes if available */}
       {allRoutes && allRoutes.length > 0 && allRoutes.map((r, idx) => (
         <Polyline
