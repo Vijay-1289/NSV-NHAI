@@ -7,6 +7,9 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { getSnappedRoadRoute } from '@/services/roadService';
+import { getStreetViewImageUrl } from '@/services/streetViewService';
+import { getPavementConditionFromBackend } from '@/services/pavementService';
 
 // Fix Leaflet's default icon path so markers show up
 L.Icon.Default.mergeOptions({
@@ -52,22 +55,53 @@ interface MapViewProps {
   allRoutes?: any[];
 }
 
-const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart, setEnd, setRoute, allRoutes }) => {
+const GOOGLE_API_KEY = 'AIzaSyA8lpEzD_QSfrtefxiVETxsTv7lnbFeWqY';
+
+const MapView: React.FC<MapViewProps> = (props) => {
   // Remove highways and setHighways
   // Remove useEffect for highways
   // Remove useEffect for Bhuvan API route fetch
   // Only keep logic for displaying Google Maps JS API routes and overlays
 
+  const [pavementResults, setPavementResults] = useState<any[]>([]);
+
+  // Fetch and analyze route when route changes
+  useEffect(() => {
+    async function fetchAndAnalyzeRoute() {
+      if (!props.start || !props.end) return;
+      const path = `${props.start[0]},${props.start[1]}|${props.end[0]},${props.end[1]}`;
+      try {
+        // 1. Get snapped route
+        const snapped = await getSnappedRoadRoute(path, GOOGLE_API_KEY);
+        if (!snapped.snappedPoints) return;
+        // 2. Get Street View images for each snapped point
+        const imageUrls = snapped.snappedPoints.map(pt =>
+          getStreetViewImageUrl(pt.location.latitude, pt.location.longitude, GOOGLE_API_KEY)
+        );
+        // 3. Download images as blobs
+        const imageBlobs = await Promise.all(
+          imageUrls.map(url => fetch(url).then(res => res.blob()))
+        );
+        // 4. Send images to backend for pavement condition
+        const result = await getPavementConditionFromBackend(imageBlobs);
+        setPavementResults(result.results || []);
+      } catch (err) {
+        setPavementResults([]);
+      }
+    }
+    fetchAndAnalyzeRoute();
+  }, [props.start, props.end]);
+
   // Map click handler
   function LocationSelector() {
     useMapEvents({
       click(e) {
-        if (!start) setStart([e.latlng.lat, e.latlng.lng]);
-        else if (!end) setEnd([e.latlng.lat, e.latlng.lng]);
+        if (!props.start) props.setStart([e.latlng.lat, e.latlng.lng]);
+        else if (!props.end) props.setEnd([e.latlng.lat, e.latlng.lng]);
         else {
-          setStart([e.latlng.lat, e.latlng.lng]);
-          setEnd(null);
-          setRoute([]);
+          props.setStart([e.latlng.lat, e.latlng.lng]);
+          props.setEnd(null);
+          props.setRoute([]);
         }
       }
     });
@@ -77,15 +111,15 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
   // Filter pavement conditions based on filters
   const filteredPavementConditions = PAVEMENT_CONDITIONS.filter(pc => {
     // Distress Level
-    if (filters.distressLevel !== 'all' && pc.severity !== filters.distressLevel) return false;
+    if (props.filters.distressLevel !== 'all' && pc.severity !== props.filters.distressLevel) return false;
     // Location (mock: filter by highway, e.g., nh1, nh2, etc. - here just as a placeholder)
-    if (filters.location !== 'all') {
+    if (props.filters.location !== 'all') {
       // You can implement actual location filtering logic here
       // For now, just filter by id for demo
-      if (filters.location === 'nh1' && pc.id !== 1) return false;
-      if (filters.location === 'nh2' && pc.id !== 2) return false;
-      if (filters.location === 'nh4' && pc.id !== 3) return false;
-      if (filters.location === 'nh8' && pc.id !== 4) return false;
+      if (props.filters.location === 'nh1' && pc.id !== 1) return false;
+      if (props.filters.location === 'nh2' && pc.id !== 2) return false;
+      if (props.filters.location === 'nh4' && pc.id !== 3) return false;
+      if (props.filters.location === 'nh8' && pc.id !== 4) return false;
     }
     // Date Range (mock: always true, as we have no date in mock data)
     return true;
@@ -97,40 +131,40 @@ const MapView: React.FC<MapViewProps> = ({ filters, start, end, route, setStart,
         attribution='&copy; OpenStreetMap contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {start && <Marker position={start}><Popup>Start Point</Popup></Marker>}
-      {end && <Marker position={end}><Popup>End Point</Popup></Marker>}
+      {props.start && <Marker position={props.start}><Popup>Start Point</Popup></Marker>}
+      {props.end && <Marker position={props.end}><Popup>End Point</Popup></Marker>}
       {/* Draw all Google routes if available */}
-      {allRoutes && allRoutes.length > 0 && allRoutes.map((r, idx) => (
+      {props.allRoutes && props.allRoutes.length > 0 && props.allRoutes.map((r, idx) => (
         <Polyline
           key={idx}
           positions={r.overview_path.map((latLng: any) => [latLng.lat(), latLng.lng()])}
-          color={idx === 0 ? '#22c55e' : '#3b82f6'}
-          weight={idx === 0 ? 6 : 4}
-          opacity={idx === 0 ? 0.9 : 0.5}
+          pathOptions={{ color: idx === 0 ? '#22c55e' : '#3b82f6', weight: idx === 0 ? 6 : 4, opacity: idx === 0 ? 0.9 : 0.5 }}
         />
       ))}
       {/* Pavement Condition Monitoring Markers */}
-      {filteredPavementConditions.map(pc => (
-        <CircleMarker
-          key={pc.id}
-          center={[pc.lat, pc.lng]}
-          radius={10}
-          pathOptions={{ color: severityColor(pc.severity), fillColor: severityColor(pc.severity), fillOpacity: 0.7 }}
-        >
-          <Popup>
-            <div>
-              <strong>Severity:</strong> <span style={{ color: severityColor(pc.severity) }}>{pc.severity.toUpperCase()}</span><br />
-              <strong>IRI:</strong> {pc.iri}<br />
-              <strong>Crack Index:</strong> {pc.crackIndex}%<br />
-              <strong>Rutting:</strong> {pc.rutting} mm
-            </div>
-          </Popup>
-        </CircleMarker>
+      {pavementResults.map((pc, idx) => (
+        (pc.lat !== undefined && pc.lng !== undefined) && (
+          <CircleMarker
+            key={idx}
+            center={[pc.lat, pc.lng]}
+            radius={10}
+            pathOptions={{ color: severityColor(pc.condition), fillColor: severityColor(pc.condition), fillOpacity: 0.7 }}
+          >
+            <Popup>
+              <div>
+                <strong>Severity:</strong> <span style={{ color: severityColor(pc.condition) }}>{pc.condition?.toUpperCase()}</span><br />
+                <strong>IRI:</strong> {pc.iri}<br />
+                <strong>Crack Index:</strong> {pc.crack_index}%<br />
+                <strong>Rutting:</strong> {pc.rutting} mm
+              </div>
+            </Popup>
+          </CircleMarker>
+        )
       ))}
       {/* Weather Overlay */}
       <WeatherOverlay center={[22.9734, 78.6569]} radius={100} gridSpacing={50} />
       {/* Traffic Overlay (only if route exists) */}
-      {route.length > 1 && <TrafficOverlay route={route} />}
+      {props.route.length > 1 && <TrafficOverlay route={props.route} />}
       <LocationSelector />
     </MapContainer>
   );
