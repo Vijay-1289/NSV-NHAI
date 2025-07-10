@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { LocateFixed, MapPin, Route } from 'lucide-react';
@@ -21,6 +21,17 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
   const [destination, setDestination] = useState('');
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleLoaded, setGoogleLoaded] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setGoogleLoaded(true);
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDetectLocation = () => {
     setLocating(true);
@@ -82,14 +93,16 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
             value={destination}
             onChange={handleDestinationInput}
             className="flex-1 bg-slate-700 border-slate-600 text-white"
+            disabled={!googleLoaded}
           />
-          <Button onClick={handleSetDestination} className="bg-blue-500 hover:bg-blue-600 text-white px-3">
+          <Button onClick={handleSetDestination} className="bg-blue-500 hover:bg-blue-600 text-white px-3" disabled={!googleLoaded}>
             <MapPin className="w-4 h-4" />
           </Button>
         </div>
+        {!googleLoaded && <div className="text-yellow-400 text-xs mt-1">Loading Google Maps API...</div>}
         {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
       </div>
-      <Button onClick={onPlanRoutes} className="w-full bg-green-600 hover:bg-green-700 text-white">
+      <Button onClick={onPlanRoutes} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!googleLoaded}>
         Show Routes
       </Button>
       {fastestRouteInfo && (
