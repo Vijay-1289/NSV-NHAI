@@ -8,25 +8,45 @@ type HighwayIssueUpdate = Database['public']['Tables']['highway_issues']['Update
 export class HighwayService {
   // Get all highway issues
   static async getHighwayIssues(): Promise<HighwayIssue[]> {
-    const { data, error } = await supabase
-      .from('highway_issues')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('highway_issues')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+        }
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Failed to load highway issues:', error);
+      return []; // Return empty array instead of throwing
+    }
   }
 
   // Get issues by status
   static async getIssuesByStatus(status: string): Promise<HighwayIssue[]> {
-    const { data, error } = await supabase
-      .from('highway_issues')
-      .select('*')
-      .eq('status', status)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('highway_issues')
+        .select('*')
+        .eq('status', status)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+        }
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Failed to load issues by status:', error);
+      return [];
+    }
   }
 
   // Create new highway issue
@@ -37,7 +57,12 @@ export class HighwayService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+      }
+      throw error;
+    }
     return data;
   }
 
@@ -50,7 +75,12 @@ export class HighwayService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+      }
+      throw error;
+    }
     return data;
   }
 
@@ -121,14 +151,31 @@ export class HighwayService {
 
   // Get user profile
   static async getUserProfile(userId: string) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+        }
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+      // Return a default profile if table doesn't exist
+      return {
+        id: userId,
+        email: 'user@example.com',
+        role: 'user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
   }
 
   // Update user role
@@ -140,7 +187,12 @@ export class HighwayService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
+      }
+      throw error;
+    }
     return data;
   }
 } 

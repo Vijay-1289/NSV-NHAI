@@ -34,6 +34,7 @@ const Index = () => {
   const [routeAnalysis, setRouteAnalysis] = useState<{ fastest: string; alternatives: string[] }>({ fastest: '', alternatives: [] });
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   // Load user profile on mount
   useEffect(() => {
@@ -44,12 +45,19 @@ const Index = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const profile = await HighwayService.getUserProfile(user.id);
-        setUserProfile(profile);
-        setUserRole(profile.role);
+        try {
+          const profile = await HighwayService.getUserProfile(user.id);
+          setUserProfile(profile);
+          setUserRole(profile.role);
+        } catch (error) {
+          console.warn('User profile not found, using default role:', error);
+          // If user profile doesn't exist, use default role
+          setUserRole('user');
+        }
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);
+      setUserRole('user'); // Default fallback
     }
   };
 
@@ -226,6 +234,14 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
       <DashboardHeader userRole={userRole} />
       
+      {dbError && (
+        <div className="bg-red-600 text-white p-4 text-center">
+          <strong>Database Error:</strong> {dbError}
+          <br />
+          <small>Please run the database migration in Supabase dashboard</small>
+        </div>
+      )}
+      
       <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
         {/* Left Panel - Role-based Dashboard */}
         <div className="w-full lg:w-80 p-4 space-y-4 overflow-y-auto">
@@ -262,21 +278,45 @@ const Index = () => {
           )}
         </div>
 
-        {/* Main Content - Map */}
+        {/* Main Content - Map (only for users) or Issue View (for inspectors/engineers) */}
         <div className="flex-1 p-4">
-          <MapView
-            filters={filters}
-            start={start}
-            end={end}
-            route={route}
-            setStart={setStart}
-            setEnd={setEnd}
-            setRoute={setRoute}
-            allRoutes={allRoutes}
-            userRole={userRole}
-            onPinPlacement={handlePinPlacement}
-            onIssueSelect={handleIssueSelect}
-          />
+          {userRole === 'user' ? (
+            <MapView
+              filters={filters}
+              start={start}
+              end={end}
+              route={route}
+              setStart={setStart}
+              setEnd={setEnd}
+              setRoute={setRoute}
+              allRoutes={allRoutes}
+              userRole={userRole}
+              onPinPlacement={handlePinPlacement}
+              onIssueSelect={handleIssueSelect}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-white">
+                <h2 className="text-2xl font-bold mb-4">
+                  {userRole === 'inspector' ? 'Highway Inspector Dashboard' : 'Engineer Dashboard'}
+                </h2>
+                <p className="text-slate-300">
+                  {userRole === 'inspector' 
+                    ? 'Monitor real-time notifications and place inspection pins on the map.'
+                    : 'View and manage highway issues reported by inspectors.'
+                  }
+                </p>
+                <div className="mt-6">
+                  <button
+                    onClick={() => setUserRole('user')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Switch to User View (with Map)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Panel - Issue Details */}

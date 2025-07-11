@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/integrations/supabase/types';
 
@@ -8,12 +10,29 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) => {
+  const navigate = useNavigate();
+
   const getRoleDisplayName = (role: UserRole) => {
     switch (role) {
       case 'user': return 'Normal User';
       case 'inspector': return 'Highway Inspector';
       case 'engineer': return 'Engineer';
       default: return 'User';
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        alert('Error signing out. Please try again.');
+      } else {
+        navigate('/auth');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('Error signing out. Please try again.');
     }
   };
 
@@ -30,7 +49,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) =>
           <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700">
             Settings
           </Button>
-          <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700">
+          <Button 
+            variant="outline" 
+            className="text-white border-slate-600 hover:bg-slate-700"
+            onClick={handleLogout}
+          >
             Logout
           </Button>
         </div>
