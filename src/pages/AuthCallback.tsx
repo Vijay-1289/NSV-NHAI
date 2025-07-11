@@ -29,12 +29,12 @@ const AuthCallback = () => {
           setTimeout(() => navigate('/'), 1000);
         }
       });
-    } else {
+      } else {
       setError('Missing access or refresh token in callback URL.');
       setStatus('Login failed.');
       console.error('Missing tokens in callback URL:', { access_token, refresh_token, hash });
       setTimeout(() => navigate('/auth?error=missing_tokens'), 2000);
-    }
+      }
   }, [navigate]);
 
   return (

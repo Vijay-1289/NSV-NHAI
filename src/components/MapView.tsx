@@ -136,11 +136,11 @@ const MapView: React.FC<MapViewProps> = (props) => {
           // For users, clicking sets start/end points
           if (!props.start) props.setStart(clickedLocation);
           else if (!props.end) props.setEnd(clickedLocation);
-          else {
+        else {
             props.setStart(clickedLocation);
             props.setEnd(null);
             props.setRoute([]);
-          }
+        }
         }
         // Engineers can view but not place pins
       }
