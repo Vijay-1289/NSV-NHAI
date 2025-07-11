@@ -1,27 +1,31 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../integrations/supabase/client";
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-const AuthCallback: React.FC = () => {
+const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle the OAuth callback from Supabase
-    const handleAuth = async () => {
-      const { error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-      if (!error) {
-        // Redirect to dashboard or home after successful login
-        navigate("/", { replace: true });
-      } else {
-        // Handle error (optional: show error message)
-        alert("Authentication failed: " + error.message);
-        navigate("/login", { replace: true });
-      }
-    };
-    handleAuth();
+    const hash = window.location.hash.substr(1); // Remove the '#'
+    const params = new URLSearchParams(hash);
+
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      }).then(() => {
+        navigate('/'); // Redirect to home/dashboard
+      });
+    } else {
+      // Handle error
+      navigate('/auth?error=missing_tokens');
+    }
   }, [navigate]);
 
-  return <div>Processing login...</div>;
+  return <div>Signing you in...</div>;
 };
 
 export default AuthCallback; 

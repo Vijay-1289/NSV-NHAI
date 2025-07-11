@@ -99,7 +99,7 @@ const Auth = () => {
             onClick={async () => {
               setLoading(true);
               setError(null);
-              const redirectUrl = window.location.origin + '/.netlify/functions/auth-callback';
+              const redirectUrl = window.location.origin + '/auth/callback';
               console.log('OAuth redirect URL:', redirectUrl);
               
               const { data, error } = await supabase.auth.signInWithOAuth({
