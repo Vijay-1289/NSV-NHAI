@@ -167,14 +167,7 @@ export class HighwayService {
       return data;
     } catch (error) {
       console.error('Failed to load user profile:', error);
-      // Return a default profile if table doesn't exist
-      return {
-        id: userId,
-        email: 'user@example.com',
-        role: 'user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      return null;
     }
   }
 

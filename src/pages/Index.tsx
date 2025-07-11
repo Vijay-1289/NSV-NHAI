@@ -99,17 +99,17 @@ const Index = () => {
   const loadUserProfile = async (userId: string) => {
     try {
       const profile = await HighwayService.getUserProfile(userId);
+      if (!profile || !profile.role || !['user', 'inspector', 'engineer'].includes(profile.role)) {
+        navigate('/onboarding');
+        setLoading(false);
+        return;
+      }
       setUserProfile(profile);
       setUserRole(profile.role);
       console.log('User profile loaded:', profile);
-      // Only redirect if role is missing or invalid
-      if (!profile.role || !['user', 'inspector', 'engineer'].includes(profile.role)) {
-        navigate('/onboarding');
-      }
       setLoading(false);
     } catch (error) {
-      console.warn('User profile not found, using default role:', error);
-      setUserRole('user');
+      console.warn('User profile not found:', error);
       setAuthError('Failed to load user profile. Please try again or log out.');
       setLoading(false);
     }
