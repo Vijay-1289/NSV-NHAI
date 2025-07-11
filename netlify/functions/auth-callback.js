@@ -16,6 +16,9 @@ exports.handler = async (event, context) => {
 
   const { code } = event.queryStringParameters || {};
   
+  console.log('Auth callback received with code:', code ? 'present' : 'missing');
+  console.log('Query parameters:', event.queryStringParameters);
+  
   if (!code) {
     return {
       statusCode: 400,
@@ -42,6 +45,11 @@ exports.handler = async (event, context) => {
     });
 
     const data = await response.json();
+    
+    console.log('Supabase response status:', response.status);
+    console.log('Supabase response data keys:', Object.keys(data));
+    console.log('Has access_token:', !!data.access_token);
+    console.log('Has refresh_token:', !!data.refresh_token);
 
     if (!data.access_token) {
       console.error('Failed to exchange code for session:', data);
@@ -55,11 +63,13 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Set cookies with session data
+    // Set cookies with session data - using non-HttpOnly for client-side access
     const cookies = [
-      `sb-access-token=${data.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax`,
-      `sb-refresh-token=${data.refresh_token}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      `sb-access-token=${data.access_token}; Path=/; Secure; SameSite=Lax; Max-Age=3600`,
+      `sb-refresh-token=${data.refresh_token}; Path=/; Secure; SameSite=Lax; Max-Age=604800`,
     ];
+
+    console.log('Setting cookies:', cookies);
 
     return {
       statusCode: 302,

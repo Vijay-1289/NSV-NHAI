@@ -18,6 +18,36 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Function to manually set session from cookies
+export const setSessionFromCookies = async () => {
+  const cookies = document.cookie.split(';');
+  const accessTokenCookie = cookies.find(c => c.trim().startsWith('sb-access-token='));
+  const refreshTokenCookie = cookies.find(c => c.trim().startsWith('sb-refresh-token='));
+  
+  if (accessTokenCookie && refreshTokenCookie) {
+    const accessToken = accessTokenCookie.split('=')[1];
+    const refreshToken = refreshTokenCookie.split('=')[1];
+    
+    console.log('Found session cookies, setting session...');
+    
+    // Set the session manually
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+    
+    if (error) {
+      console.error('Error setting session from cookies:', error);
+    } else {
+      console.log('Session set successfully from cookies');
+    }
+    
+    return { data, error };
+  }
+  
+  return { data: null, error: null };
+};
+
 // Storage configuration
 export const STORAGE_BUCKET = 'highway-issues';
 export const STORAGE_URL = 'https://xlwnevmqgfqhowpffqlv.supabase.co/storage/v1/object/public/highway-issues';

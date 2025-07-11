@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, setSessionFromCookies } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DebugAuth from '@/components/DebugAuth';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -16,8 +17,12 @@ const Auth = () => {
   // Check if user is already authenticated or session is set after OAuth
   useEffect(() => {
     const checkAuth = async () => {
+      // First try to set session from cookies (for OAuth callback)
+      await setSessionFromCookies();
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log('Session found, navigating to home');
         navigate('/');
       }
     };
@@ -25,6 +30,7 @@ const Auth = () => {
 
     // Listen for auth state changes (including after OAuth)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
       if (session) {
         navigate('/');
       }
@@ -72,8 +78,11 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4">
+      <div className="max-w-4xl mx-auto">
+        <DebugAuth />
+        <div className="flex justify-center mt-8">
+          <Card className="w-full max-w-md bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">
             {isSignUp ? 'Create Account' : 'Sign In'}
@@ -93,7 +102,7 @@ const Auth = () => {
               const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                  redirectTo: window.location.origin + '/',
+                  redirectTo: window.location.origin + '/.netlify/functions/auth-callback',
                 },
               });
               if (error) setError(error.message);
@@ -160,6 +169,8 @@ const Auth = () => {
           </form>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 };
