@@ -101,8 +101,10 @@ const Index = () => {
       setUserProfile(profile);
       setUserRole(profile.role);
       console.log('User profile loaded:', profile);
-      // Always redirect to onboarding for role selection
-      navigate('/onboarding');
+      // Only redirect if role is missing or invalid
+      if (!profile.role || !['user', 'inspector', 'engineer'].includes(profile.role)) {
+        navigate('/onboarding');
+      }
     } catch (error) {
       console.warn('User profile not found, using default role:', error);
       setUserRole('user');
