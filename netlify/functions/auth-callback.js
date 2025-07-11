@@ -15,19 +15,41 @@ export const handler = async (event, context) => {
     };
   }
 
-  const { code } = event.queryStringParameters || {};
+  // Check for different OAuth parameters
+  const { code, error, state } = event.queryStringParameters || {};
   
   console.log('Auth callback received with code:', code ? 'present' : 'missing');
+  console.log('Auth callback received with error:', error || 'none');
+  console.log('Auth callback received with state:', state || 'none');
   console.log('Query parameters:', event.queryStringParameters);
   
-  if (!code) {
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error);
     return {
       statusCode: 400,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: 'Missing code parameter' }),
+      body: JSON.stringify({ error: `OAuth error: ${error}` }),
+    };
+  }
+  
+  if (!code) {
+    console.error('No code parameter found in query string');
+    console.log('Available parameters:', Object.keys(event.queryStringParameters || {}));
+    return {
+      statusCode: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        error: 'Missing code parameter',
+        availableParams: Object.keys(event.queryStringParameters || {}),
+        queryString: event.queryStringParameters
+      }),
     };
   }
 

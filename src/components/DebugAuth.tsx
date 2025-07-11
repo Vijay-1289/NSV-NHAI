@@ -7,6 +7,7 @@ const DebugAuth = () => {
   const [session, setSession] = useState<any>(null);
   const [cookies, setCookies] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [testResult, setTestResult] = useState<string>('');
 
   const checkSession = async () => {
     setLoading(true);
@@ -34,6 +35,39 @@ const DebugAuth = () => {
     checkCookies();
   };
 
+  const testOAuthFlow = async () => {
+    setLoading(true);
+    setTestResult('Testing OAuth flow...');
+    
+    try {
+      const redirectUrl = window.location.origin + '/.netlify/functions/auth-callback';
+      console.log('Testing OAuth redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      
+      if (error) {
+        setTestResult(`OAuth Error: ${error.message}`);
+      } else {
+        setTestResult('OAuth initiated successfully - check browser console');
+      }
+    } catch (err: any) {
+      setTestResult(`Test Error: ${err.message}`);
+    }
+    
+    setLoading(false);
+  };
+
+
+
   useEffect(() => {
     checkSession();
     checkCookies();
@@ -46,7 +80,7 @@ const DebugAuth = () => {
           <CardTitle>Auth Debug Panel</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={checkSession} disabled={loading}>
               Check Session
             </Button>
@@ -55,6 +89,9 @@ const DebugAuth = () => {
             </Button>
             <Button onClick={testSetSessionFromCookies} disabled={loading}>
               Set Session from Cookies
+            </Button>
+            <Button onClick={testOAuthFlow} disabled={loading}>
+              Test OAuth Flow
             </Button>
             <Button onClick={clearCookies} variant="destructive">
               Clear Cookies
@@ -85,6 +122,15 @@ const DebugAuth = () => {
               <p>Refresh Token: {session?.refresh_token ? 'Present' : 'Missing'}</p>
             </div>
           </div>
+
+          {testResult && (
+            <div>
+              <h3 className="font-semibold mb-2">Test Result:</h3>
+              <div className="bg-blue-100 p-2 rounded text-sm">
+                {testResult}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

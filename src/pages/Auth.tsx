@@ -106,12 +106,21 @@ const Auth = () => {
                 provider: 'google',
                 options: {
                   redirectTo: redirectUrl,
+                  queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                  },
                 },
               });
               
               console.log('OAuth response:', { data, error });
-              if (error) setError(error.message);
-              setLoading(false);
+              if (error) {
+                setError(error.message);
+                setLoading(false);
+              } else {
+                // The OAuth flow will redirect, so we don't need to handle the response here
+                console.log('OAuth initiated successfully');
+              }
             }}
             disabled={loading}
           >
