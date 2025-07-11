@@ -184,8 +184,8 @@ export class HighwayService {
     if (error && error.code === 'PGRST116') {
       throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
     }
-    // If not found, insert new profile
-    if (error && error.code === '404') {
+    // If not found, insert new profile (if no data returned)
+    if (!data) {
       // Get user email
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) throw userError || new Error('User not authenticated');
