@@ -1,4 +1,7 @@
 export const handler = async (event, context) => {
+  console.log('Function called with method:', event.httpMethod);
+  console.log('Full event:', JSON.stringify(event, null, 2));
+  
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
