@@ -76,6 +76,28 @@ const Auth = () => {
           </p>
         </CardHeader>
         <CardContent>
+          {/* Google Login Button */}
+          <Button
+            type="button"
+            className="w-full bg-white text-gray-900 border border-gray-300 hover:bg-gray-100 flex items-center justify-center mb-4"
+            onClick={async () => {
+              setLoading(true);
+              setError(null);
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                  redirectTo: window.location.origin + '/',
+                },
+              });
+              if (error) setError(error.message);
+              setLoading(false);
+            }}
+            disabled={loading}
+          >
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 mr-2" />
+            Sign in with Google
+          </Button>
+
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
