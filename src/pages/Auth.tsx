@@ -13,16 +13,23 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated or session is set after OAuth
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log('User already authenticated, redirecting to dashboard');
         navigate('/');
       }
     };
     checkAuth();
+
+    // Listen for auth state changes (including after OAuth)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate('/');
+      }
+    });
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
