@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, STORAGE_BUCKET } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
 type HighwayIssue = Database['public']['Tables']['highway_issues']['Row'];
@@ -57,14 +57,14 @@ export class HighwayService {
   // Upload file to Supabase storage
   static async uploadFile(file: File, path: string): Promise<string> {
     const { data, error } = await supabase.storage
-      .from('highway-issues')
+      .from(STORAGE_BUCKET)
       .upload(path, file);
 
     if (error) throw error;
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('highway-issues')
+      .from(STORAGE_BUCKET)
       .getPublicUrl(path);
 
     return urlData.publicUrl;
