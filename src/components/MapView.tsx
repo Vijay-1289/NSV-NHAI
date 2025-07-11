@@ -10,6 +10,8 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { getSnappedRoadRoute } from '@/services/roadService';
 import { getStreetViewImageUrl } from '@/services/streetViewService';
 import { getPavementConditionFromBackend } from '@/services/pavementService';
+import { HighwayService } from '@/services/highwayService';
+import { UserRole } from '@/integrations/supabase/types';
 
 // Fix Leaflet's default icon path so markers show up
 L.Icon.Default.mergeOptions({
@@ -53,17 +55,43 @@ interface MapViewProps {
   setEnd: (coords: [number, number] | null) => void;
   setRoute: (route: [number, number][]) => void;
   allRoutes?: any[];
+  userRole: UserRole;
+  onPinPlacement?: (location: [number, number], severity: string) => void;
+  onIssueSelect?: (issue: any) => void;
 }
 
 const GOOGLE_API_KEY = 'AIzaSyA8lpEzD_QSfrtefxiVETxsTv7lnbFeWqY';
 
 const MapView: React.FC<MapViewProps> = (props) => {
-  // Remove highways and setHighways
-  // Remove useEffect for highways
-  // Remove useEffect for Bhuvan API route fetch
-  // Only keep logic for displaying Google Maps JS API routes and overlays
-
   const [pavementResults, setPavementResults] = useState<any[]>([]);
+  const [highwayIssues, setHighwayIssues] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+
+  // Load highway issues on component mount
+  useEffect(() => {
+    loadHighwayIssues();
+  }, []);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const subscription = HighwayService.subscribeToIssues((payload) => {
+      console.log('Real-time update:', payload);
+      loadHighwayIssues(); // Reload issues when there's an update
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loadHighwayIssues = async () => {
+    try {
+      const issues = await HighwayService.getHighwayIssues();
+      setHighwayIssues(issues);
+    } catch (error) {
+      console.error('Failed to load highway issues:', error);
+    }
+  };
 
   // Fetch and analyze route when route changes
   useEffect(() => {
@@ -92,38 +120,51 @@ const MapView: React.FC<MapViewProps> = (props) => {
     fetchAndAnalyzeRoute();
   }, [props.start, props.end]);
 
-  // Map click handler
+  // Map click handler with role-based functionality
   function LocationSelector() {
     useMapEvents({
       click(e) {
-        if (!props.start) props.setStart([e.latlng.lat, e.latlng.lng]);
-        else if (!props.end) props.setEnd([e.latlng.lat, e.latlng.lng]);
-        else {
-          props.setStart([e.latlng.lat, e.latlng.lng]);
-          props.setEnd(null);
-          props.setRoute([]);
+        const clickedLocation: [number, number] = [e.latlng.lat, e.latlng.lng];
+        
+        if (props.userRole === 'inspector') {
+          // For inspectors, clicking places a pin
+          setSelectedLocation(clickedLocation);
+          if (props.onPinPlacement) {
+            props.onPinPlacement(clickedLocation, 'medium'); // Default severity
+          }
+        } else if (props.userRole === 'user') {
+          // For users, clicking sets start/end points
+          if (!props.start) props.setStart(clickedLocation);
+          else if (!props.end) props.setEnd(clickedLocation);
+          else {
+            props.setStart(clickedLocation);
+            props.setEnd(null);
+            props.setRoute([]);
+          }
         }
+        // Engineers can view but not place pins
       }
     });
     return null;
   }
 
-  // Filter pavement conditions based on filters
-  const filteredPavementConditions = PAVEMENT_CONDITIONS.filter(pc => {
-    // Distress Level
-    if (props.filters.distressLevel !== 'all' && pc.severity !== props.filters.distressLevel) return false;
-    // Location (mock: filter by highway, e.g., nh1, nh2, etc. - here just as a placeholder)
-    if (props.filters.location !== 'all') {
-      // You can implement actual location filtering logic here
-      // For now, just filter by id for demo
-      if (props.filters.location === 'nh1' && pc.id !== 1) return false;
-      if (props.filters.location === 'nh2' && pc.id !== 2) return false;
-      if (props.filters.location === 'nh4' && pc.id !== 3) return false;
-      if (props.filters.location === 'nh8' && pc.id !== 4) return false;
+  const getIssueColor = (severity: string) => {
+    switch (severity) {
+      case 'low': return '#10b981';
+      case 'medium': return '#f59e0b';
+      case 'high': return '#f97316';
+      case 'critical': return '#ef4444';
+      default: return '#6b7280';
     }
-    // Date Range (mock: always true, as we have no date in mock data)
-    return true;
-  });
+  };
+
+  const getIssueIcon = (status: string) => {
+    switch (status) {
+      case 'resolved': return '✅';
+      case 'inspected': return '🔧';
+      default: return '⚠️';
+    }
+  };
 
   return (
     <MapContainer center={[22.9734, 78.6569]} zoom={5} style={{ height: "80vh", width: "100%" }}>
@@ -131,8 +172,27 @@ const MapView: React.FC<MapViewProps> = (props) => {
         attribution='&copy; OpenStreetMap contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      
+      {/* Start/End markers */}
       {props.start && <Marker position={props.start}><Popup>Start Point</Popup></Marker>}
       {props.end && <Marker position={props.end}><Popup>End Point</Popup></Marker>}
+      
+      {/* Selected location for inspector pin placement */}
+      {selectedLocation && props.userRole === 'inspector' && (
+        <CircleMarker
+          center={selectedLocation}
+          radius={15}
+          pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.7, weight: 3 }}
+        >
+          <Popup>
+            <div>
+              <strong>Pin Location</strong><br />
+              <p>Click "Place Pin" to confirm this location</p>
+            </div>
+          </Popup>
+        </CircleMarker>
+      )}
+      
       {/* Draw all Google routes if available */}
       {props.allRoutes && props.allRoutes.length > 0 && props.allRoutes.map((r, idx) => (
         <Polyline
@@ -141,6 +201,53 @@ const MapView: React.FC<MapViewProps> = (props) => {
           pathOptions={{ color: idx === 0 ? '#22c55e' : '#3b82f6', weight: idx === 0 ? 6 : 4, opacity: idx === 0 ? 0.9 : 0.5 }}
         />
       ))}
+      
+      {/* Highway Issues Markers */}
+      {highwayIssues.map((issue) => (
+        <CircleMarker
+          key={issue.id}
+          center={[issue.location[0], issue.location[1]]}
+          radius={12}
+          pathOptions={{ 
+            color: getIssueColor(issue.severity), 
+            fillColor: getIssueColor(issue.severity), 
+            fillOpacity: 0.8,
+            weight: 2
+          }}
+          eventHandlers={{
+            click: () => {
+              if (props.onIssueSelect) {
+                props.onIssueSelect(issue);
+              }
+            }
+          }}
+        >
+          <Popup>
+            <div className="min-w-[200px]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{getIssueIcon(issue.status)}</span>
+                <strong>Issue #{issue.id.slice(0, 8)}</strong>
+              </div>
+              <p className="text-sm mb-2"><strong>Description:</strong> {issue.description}</p>
+              <p className="text-sm mb-2"><strong>Severity:</strong> 
+                <span style={{ color: getIssueColor(issue.severity) }}> {issue.severity.toUpperCase()}</span>
+              </p>
+              <p className="text-sm mb-2"><strong>Status:</strong> {issue.status}</p>
+              <p className="text-xs text-gray-500">
+                {new Date(issue.created_at).toLocaleDateString()}
+              </p>
+              {issue.image_url && (
+                <img 
+                  src={issue.image_url} 
+                  alt="Issue" 
+                  className="w-full h-20 object-cover rounded mt-2"
+                />
+              )}
+            </div>
+          </Popup>
+        </CircleMarker>
+      ))}
+      
       {/* Pavement Condition Monitoring Markers */}
       {pavementResults.map((pc, idx) => (
         (pc.lat !== undefined && pc.lng !== undefined) && (
@@ -161,10 +268,13 @@ const MapView: React.FC<MapViewProps> = (props) => {
           </CircleMarker>
         )
       ))}
+      
       {/* Weather Overlay */}
       <WeatherOverlay center={[22.9734, 78.6569]} radius={100} gridSpacing={50} />
+      
       {/* Traffic Overlay (only if route exists) */}
       {props.route.length > 1 && <TrafficOverlay route={props.route} />}
+      
       <LocationSelector />
     </MapContainer>
   );

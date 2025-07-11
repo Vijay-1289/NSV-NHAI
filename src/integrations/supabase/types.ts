@@ -6,29 +6,68 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
-  }
+export type UserRole = 'user' | 'inspector' | 'engineer';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Database {
   public: {
     Tables: {
-      [_ in never]: never
-    }
+      user_profiles: {
+        Row: UserProfile;
+        Insert: Omit<UserProfile, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<UserProfile, 'created_at' | 'updated_at'>>;
+      };
+      highway_issues: {
+        Row: {
+          id: string;
+          user_id: string;
+          location: [number, number];
+          description: string;
+          severity: 'low' | 'medium' | 'high' | 'critical';
+          status: 'reported' | 'inspected' | 'resolved';
+          image_url?: string;
+          video_url?: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          location: [number, number];
+          description: string;
+          severity: 'low' | 'medium' | 'high' | 'critical';
+          status?: 'reported' | 'inspected' | 'resolved';
+          image_url?: string;
+          video_url?: string;
+        };
+        Update: Partial<{
+          description: string;
+          severity: 'low' | 'medium' | 'high' | 'critical';
+          status: 'reported' | 'inspected' | 'resolved';
+          image_url: string;
+          video_url: string;
+        }>;
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
+      [_ in never]: never;
+    };
+  };
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
