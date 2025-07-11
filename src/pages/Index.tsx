@@ -27,6 +27,7 @@ const Index = () => {
     location: 'all'
   });
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [start, setStart] = useState<[number, number] | null>(null);
   const [end, setEnd] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
@@ -36,53 +37,76 @@ const Index = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [dbError, setDbError] = useState<string | null>(null);
 
-  // Load user profile on mount
-  useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  const loadUserProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        try {
-          const profile = await HighwayService.getUserProfile(user.id);
-          setUserProfile(profile);
-          setUserRole(profile.role);
-        } catch (error) {
-          console.warn('User profile not found, using default role:', error);
-          // If user profile doesn't exist, use default role
-          setUserRole('user');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load user profile:', error);
-      setUserRole('user'); // Default fallback
-    }
-  };
-
+  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        setLoading(true);
+        setAuthError(null);
+        
+        // Get current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setAuthError('Authentication error. Please try logging in again.');
+          navigate('/auth');
+          return;
+        }
+
+        if (!session) {
+          console.log('No session found, redirecting to auth');
+          navigate('/auth');
+          return;
+        }
+
+        console.log('Session found:', session.user.email);
+        
+        // Load user profile
+        await loadUserProfile(session.user.id);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setAuthError('Failed to verify authentication. Please try again.');
         navigate('/auth');
-        return;
       }
-      setLoading(false);
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
         navigate('/auth');
-      } else {
+      } else if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in:', session.user.email);
+        await loadUserProfile(session.user.id);
+        setLoading(false);
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        console.log('Token refreshed');
         setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const profile = await HighwayService.getUserProfile(userId);
+      setUserProfile(profile);
+      setUserRole(profile.role);
+      console.log('User profile loaded:', profile);
+    } catch (error) {
+      console.warn('User profile not found, using default role:', error);
+      // If user profile doesn't exist, use default role
+      setUserRole('user');
+    }
+  };
 
   // Handler to plan routes (fetch from Google Directions API)
   const handlePlanRoutes = () => {
@@ -225,7 +249,28 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="bg-red-600 p-4 rounded-lg mb-4">
+            <strong>Authentication Error:</strong> {authError}
+          </div>
+          <button
+            onClick={() => navigate('/auth')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Go to Login
+          </button>
+        </div>
       </div>
     );
   }
