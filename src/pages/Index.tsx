@@ -51,12 +51,14 @@ const Index = () => {
           console.error('Session error:', sessionError);
           setAuthError('Authentication error. Please try logging in again.');
           navigate('/auth');
+          setLoading(false);
           return;
         }
 
         if (!session) {
           console.log('No session found, redirecting to auth');
           navigate('/auth');
+          setLoading(false);
           return;
         }
 
@@ -64,12 +66,11 @@ const Index = () => {
         
         // Load user profile
         await loadUserProfile(session.user.id);
-        
-        setLoading(false);
       } catch (error) {
         console.error('Auth check error:', error);
         setAuthError('Failed to verify authentication. Please try again.');
         navigate('/auth');
+        setLoading(false);
       }
     };
 
@@ -105,10 +106,12 @@ const Index = () => {
       if (!profile.role || !['user', 'inspector', 'engineer'].includes(profile.role)) {
         navigate('/onboarding');
       }
+      setLoading(false);
     } catch (error) {
       console.warn('User profile not found, using default role:', error);
       setUserRole('user');
-      navigate('/onboarding');
+      setAuthError('Failed to load user profile. Please try again or log out.');
+      setLoading(false);
     }
   };
 
@@ -266,13 +269,19 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="bg-red-600 p-4 rounded-lg mb-4">
-            <strong>Authentication Error:</strong> {authError}
+            <strong>Error:</strong> {authError}
           </div>
           <button
-            onClick={() => navigate('/auth')}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
           >
-            Go to Login
+            Retry
+          </button>
+          <button
+            onClick={async () => { await supabase.auth.signOut(); navigate('/auth'); }}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+          >
+            Log Out
           </button>
         </div>
       </div>
