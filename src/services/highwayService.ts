@@ -180,19 +180,40 @@ export class HighwayService {
 
   // Update user role
   static async updateUserRole(userId: string, role: string) {
-    const { data, error } = await supabase
+    // Try to update first
+    let { data, error } = await supabase
       .from('user_profiles')
       .update({ role })
       .eq('id', userId)
       .select()
       .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
-      }
-      throw error;
+    if (error && error.code === 'PGRST116') {
+      throw new Error('Database tables not found. Please run the migration in Supabase dashboard.');
     }
+    // If not found, insert new profile
+    if (error && error.code === '404') {
+      // Get user email
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw userError || new Error('User not authenticated');
+      const email = userData.user.email;
+      const now = new Date().toISOString();
+      const insertProfile = {
+        id: userId,
+        email,
+        role,
+        created_at: now,
+        updated_at: now
+      };
+      const { data: insertData, error: insertError } = await supabase
+        .from('user_profiles')
+        .insert(insertProfile)
+        .select()
+        .single();
+      if (insertError) throw insertError;
+      return insertData;
+    }
+    if (error) throw error;
     return data;
   }
 } 
