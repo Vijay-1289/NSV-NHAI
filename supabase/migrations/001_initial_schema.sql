@@ -1,7 +1,3 @@
--- Enable real-time for the tables
-ALTER PUBLICATION supabase_realtime ADD TABLE user_profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE highway_issues;
-
 -- Create user_profiles table
 CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -91,4 +87,8 @@ CREATE TRIGGER update_user_profiles_updated_at
 
 CREATE TRIGGER update_highway_issues_updated_at
   BEFORE UPDATE ON highway_issues
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable real-time for the tables (after they are created)
+ALTER PUBLICATION supabase_realtime ADD TABLE user_profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE highway_issues; 
