@@ -2,25 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import GoogleRouteMap from '@/components/GoogleRouteMap';
-import { MetricsPanel } from '@/components/MetricsPanel';
-import { FilterPanel } from '@/components/FilterPanel';
-import { SegmentInspector } from '@/components/SegmentInspector';
 import { NotificationPanel } from '@/components/NotificationPanel';
-import RoutePlanner from '@/components/RoutePlanner';
 import { HighwaySearch } from '@/components/HighwaySearch';
-import { geocodeHighwayName } from '@/services/geocodeService';
-import { UserDashboard } from '@/components/UserDashboard';
+import { UserDashboard as UserDashboardComponent } from '@/components/UserDashboard';
 import { UserRole } from '@/integrations/supabase/types';
 import MapView from '@/components/MapView';
 import { HighwayService } from '@/services/highwayService';
 
-const GOOGLE_API_KEY = 'AIzaSyA8lpEzD_QSfrtefxiVETxsTv7lnbFeWqY';
-
-const Index = () => {
+const InspectorDashboard = () => {
   const navigate = useNavigate();
-  const [selectedSegment, setSelectedSegment] = useState(null);
-  const [userRole, setUserRole] = useState<UserRole>('user'); // Default to user role
+  const [userRole, setUserRole] = useState<UserRole>('inspector');
   const [filters, setFilters] = useState({
     dateRange: 'today',
     distressLevel: 'all',
@@ -28,23 +19,20 @@ const Index = () => {
   });
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [start, setStart] = useState<[number, number] | null>(null);
   const [end, setEnd] = useState<[number, number] | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
-  const [allRoutes, setAllRoutes] = useState<any[]>([]); // Store all Google routes
-  const [routeAnalysis, setRouteAnalysis] = useState<{ fastest: string; alternatives: string[] }>({ fastest: '', alternatives: [] });
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [dbError, setDbError] = useState<string | null>(null);
+  const [allRoutes, setAllRoutes] = useState<any[]>([]);
 
-  // Check authentication on mount
+  // Check authentication and role on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setLoading(true);
         setAuthError(null);
         
-        // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -64,7 +52,7 @@ const Index = () => {
 
         console.log('Session found:', session.user.email);
         
-        // Load user profile
+        // Load user profile and check role
         await loadUserProfile(session.user.id);
       } catch (error) {
         console.error('Auth check error:', error);
@@ -76,7 +64,6 @@ const Index = () => {
 
     checkAuth();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
       
@@ -105,121 +92,21 @@ const Index = () => {
         return;
       }
 
-      // Redirect to appropriate dashboard based on role
-      if (['user', 'inspector', 'engineer'].includes(profile.role)) {
+      // Redirect if user is not an inspector
+      if (profile.role !== 'inspector') {
         navigate(`/dashboard/${profile.role}`);
         setLoading(false);
         return;
       }
 
-      // Fallback to onboarding if role is invalid
-      navigate('/onboarding');
+      setUserProfile(profile);
+      setUserRole(profile.role);
+      console.log('Inspector profile loaded:', profile);
       setLoading(false);
     } catch (error) {
       console.warn('User profile not found:', error);
       setAuthError('Failed to load user profile. Please try again or log out.');
       setLoading(false);
-    }
-  };
-
-  // Handler to plan routes (fetch from Google Directions API)
-  const handlePlanRoutes = () => {
-    if (start && end && window.google && window.google.maps) {
-      const directionsService = new window.google.maps.DirectionsService();
-      directionsService.route(
-        {
-          origin: { lat: start[0], lng: start[1] },
-          destination: { lat: end[0], lng: end[1] },
-          travelMode: window.google.maps.TravelMode.DRIVING,
-          provideRouteAlternatives: true,
-        },
-        (result, status) => {
-          if (status === 'OK' && result.routes.length > 0) {
-            setAllRoutes(result.routes);
-            // Fastest route is the first
-            const fastest = result.routes[0];
-            const decoded = fastest.overview_path.map((latLng) => [latLng.lat(), latLng.lng()] as [number, number]);
-            setRoute(decoded);
-            // Analysis
-            const fastestSummary = `Fastest: ${fastest.summary} (${fastest.legs[0].distance.text}, ${fastest.legs[0].duration.text})`;
-            const alternatives = result.routes.slice(1).map((r, i) => {
-              let reason = '';
-              if (r.legs[0].duration.value > fastest.legs[0].duration.value) reason += 'Slower';
-              if (r.legs[0].distance.value > fastest.legs[0].distance.value) reason += (reason ? ', ' : '') + 'Longer';
-              return `Alt ${i+1}: ${r.summary} (${r.legs[0].distance.text}, ${r.legs[0].duration.text})${reason ? ' - ' + reason : ''}`;
-            });
-            setRouteAnalysis({ fastest: fastestSummary, alternatives });
-          }
-        }
-      );
-    }
-  };
-
-  // Polyline decoding helper (Google encoded polyline algorithm)
-  function decodePolyline(encoded: string): [number, number][] {
-    let points: [number, number][] = [];
-    let index = 0, lat = 0, lng = 0;
-    while (index < encoded.length) {
-      let b, shift = 0, result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-      points.push([lat / 1e5, lng / 1e5]);
-    }
-    return points;
-  }
-
-  const handleHighwaySearch = async (highway: string) => {
-    try {
-      const { start: s, end: e } = await geocodeHighwayName(highway, GOOGLE_API_KEY);
-      setStart(s);
-      setEnd(e);
-    } catch (err: any) {
-      alert('Could not find highway: ' + (err.message || err));
-    }
-  };
-
-  // New handlers for role-based functionality
-  const handleImageUpload = async (file: File, location: [number, number]) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Upload file to Supabase storage
-      const timestamp = Date.now();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${timestamp}.${fileExt}`;
-      
-      const fileUrl = await HighwayService.uploadFile(file, fileName);
-      
-      // Create highway issue
-      const issue = await HighwayService.createHighwayIssue({
-        user_id: user.id,
-        location: location,
-        description: `Issue reported by user`,
-        severity: 'medium',
-        image_url: fileUrl,
-        status: 'reported'
-      });
-
-      console.log('Issue created:', issue);
-      alert('Issue reported successfully! Inspector will be notified.');
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
     }
   };
 
@@ -299,53 +186,31 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
       <DashboardHeader userRole={userRole} />
       
-      {dbError && (
-        <div className="bg-red-600 text-white p-4 text-center">
-          <strong>Database Error:</strong> {dbError}
-          <br />
-          <small>Please run the database migration in Supabase dashboard</small>
-        </div>
-      )}
-      
       <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
-        {/* Left Panel - Role-based Dashboard */}
+        {/* Left Panel - Inspector Dashboard */}
         <div className="w-full lg:w-80 p-4 space-y-4 overflow-y-auto">
-          <UserDashboard
+          <UserDashboardComponent
             userRole={userRole}
-            onImageUpload={handleImageUpload}
+            onImageUpload={() => {}} // Not used for inspectors
             onPinPlacement={handlePinPlacement}
             onStatusUpdate={handleStatusUpdate}
           />
           
-          {/* Show highway search for all roles */}
-          <HighwaySearch onSearch={handleHighwaySearch} />
+          <HighwaySearch onSearch={() => {}} />
           
-          {/* Show additional components based on role */}
-          {userRole === 'user' && (
-            <>
-              <RoutePlanner
-                onSetStart={setStart}
-                onSetEnd={setEnd}
-                onPlanRoutes={handlePlanRoutes}
-                fastestRouteInfo={routeAnalysis.fastest}
-                alternativeRoutesInfo={routeAnalysis.alternatives}
-              />
-              <MetricsPanel />
-            </>
-          )}
-          
-          {userRole === 'inspector' && (
-            <NotificationPanel />
-          )}
-          
-          {userRole === 'engineer' && (
-            <MetricsPanel />
-          )}
+          <NotificationPanel />
         </div>
 
-        {/* Main Content - Map (only for users) or Issue View (for inspectors/engineers) */}
+        {/* Main Content - Map for placing inspection pins */}
         <div className="flex-1 p-4">
-          {userRole === 'user' ? (
+          <div className="h-full">
+            <div className="mb-4 text-white">
+              <h2 className="text-xl font-bold mb-2">Highway Inspector Dashboard</h2>
+              <p className="text-slate-300">
+                Click on the map to place inspection pins. Monitor real-time notifications and manage highway issues.
+              </p>
+            </div>
+            
             <MapView
               filters={filters}
               start={start}
@@ -359,29 +224,7 @@ const Index = () => {
               onPinPlacement={handlePinPlacement}
               onIssueSelect={handleIssueSelect}
             />
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-white">
-                <h2 className="text-2xl font-bold mb-4">
-                  {userRole === 'inspector' ? 'Highway Inspector Dashboard' : 'Engineer Dashboard'}
-                </h2>
-                <p className="text-slate-300">
-                  {userRole === 'inspector' 
-                    ? 'Monitor real-time notifications and place inspection pins on the map.'
-                    : 'View and manage highway issues reported by inspectors.'
-                  }
-                </p>
-                <div className="mt-6">
-                  <button
-                    onClick={() => setUserRole('user')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Switch to User View (with Map)
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Right Panel - Issue Details */}
@@ -439,22 +282,20 @@ const Index = () => {
                   </div>
                 )}
                 
-                {userRole === 'engineer' && (
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleStatusUpdate(selectedIssue.id, 'inspected')}
-                      className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
-                    >
-                      Mark Inspected
-                    </button>
-                    <button
-                      onClick={() => handleStatusUpdate(selectedIssue.id, 'resolved')}
-                      className="px-3 py-1 bg-green-600 text-white rounded text-xs"
-                    >
-                      Mark Resolved
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => handleStatusUpdate(selectedIssue.id, 'inspected')}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+                  >
+                    Mark Inspected
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate(selectedIssue.id, 'resolved')}
+                    className="px-3 py-1 bg-green-600 text-white rounded text-xs"
+                  >
+                    Mark Resolved
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -464,4 +305,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default InspectorDashboard; 

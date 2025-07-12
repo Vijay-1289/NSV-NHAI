@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/integrations/supabase/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface DashboardHeaderProps {
   userRole: UserRole;
@@ -46,9 +47,24 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) =>
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700">
-            Settings
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700">
+                Switch Dashboard
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/user')}>
+                Normal User Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/inspector')}>
+                Inspector Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/engineer')}>
+                Engineer Dashboard
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button 
             variant="outline" 
             className="text-white border-slate-600 hover:bg-slate-700"

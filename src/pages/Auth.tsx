@@ -4,6 +4,7 @@ import { supabase, setSessionFromCookies } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DebugAuth from '@/components/DebugAuth';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4">
       <div className="max-w-4xl mx-auto">
+        <DebugAuth />
         <div className="flex justify-center mt-8">
           <Card className="w-full max-w-md bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
         <CardHeader className="text-center">

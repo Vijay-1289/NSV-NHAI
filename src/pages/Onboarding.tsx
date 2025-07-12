@@ -21,7 +21,7 @@ const Onboarding: React.FC = () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw userError || new Error('User not authenticated');
       await HighwayService.updateUserRole(user.id, role);
-      navigate('/');
+      navigate(`/dashboard/${role}`);
     } catch (err: any) {
       setError(err.message || 'Failed to set role');
     } finally {

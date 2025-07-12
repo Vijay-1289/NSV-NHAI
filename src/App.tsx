@@ -9,9 +9,11 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
+import UserDashboard from "./pages/UserDashboard";
+import InspectorDashboard from "./pages/InspectorDashboard";
+import EngineerDashboard from "./pages/EngineerDashboard";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-// Removed AuthCallback import
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,9 @@ const App = () => {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard/user" element={<UserDashboard />} />
+            <Route path="/dashboard/inspector" element={<InspectorDashboard />} />
+            <Route path="/dashboard/engineer" element={<EngineerDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
