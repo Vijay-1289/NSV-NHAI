@@ -96,7 +96,8 @@ const RoutePlanner: React.FC<RoutePlannerProps> = ({
             disabled={!googleLoaded}
           />
           <Button onClick={handleSetDestination} className="bg-blue-500 hover:bg-blue-600 text-white px-3" disabled={!googleLoaded}>
-            <MapPin className="w-4 h-4" />
+            <MapPin className="w-4 h-4 mr-2" />
+            Set Destination
           </Button>
         </div>
         {!googleLoaded && <div className="text-yellow-400 text-xs mt-1">Loading Google Maps API...</div>}
