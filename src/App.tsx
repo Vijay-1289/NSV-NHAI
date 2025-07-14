@@ -14,7 +14,7 @@ import InspectorDashboard from "./pages/InspectorDashboard";
 import EngineerDashboard from "./pages/EngineerDashboard";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import EarthVideo from '../Earth.mp4';
+import EarthImage from '../Earth.jpg';
 
 const queryClient = new QueryClient();
 
@@ -37,16 +37,12 @@ const App = () => {
         <Toaster />
         <Sonner />
         <div className="relative min-h-screen">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
+          <img
+            src={EarthImage}
+            alt="Earth background"
             className="fixed top-0 left-0 w-full h-full object-cover z-0"
             style={{ pointerEvents: 'none' }}
-          >
-            <source src={EarthVideo} type="video/mp4" />
-          </video>
+          />
           <div className="relative z-10">
             <Router>
               <Routes>
