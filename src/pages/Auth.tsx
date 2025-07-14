@@ -78,9 +78,9 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-center mt-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+      <div className="w-full max-w-md">
+        <div>
           <Card className="w-full max-w-md bg-slate-800/50 backdrop-blur-sm border-slate-700/50">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">

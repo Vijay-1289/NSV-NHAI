@@ -14,6 +14,7 @@ import InspectorDashboard from "./pages/InspectorDashboard";
 import EngineerDashboard from "./pages/EngineerDashboard";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import EarthVideo from '../Earth.mp4';
 
 const queryClient = new QueryClient();
 
@@ -35,20 +36,34 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/dashboard/user" element={<UserDashboard />} />
-            <Route path="/dashboard/inspector" element={<InspectorDashboard />} />
-            <Route path="/dashboard/engineer" element={<EngineerDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
+        <div className="relative min-h-screen">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="fixed top-0 left-0 w-full h-full object-cover z-0"
+            style={{ pointerEvents: 'none' }}
+          >
+            <source src={EarthVideo} type="video/mp4" />
+          </video>
+          <div className="relative z-10">
+            <Router>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/dashboard/user" element={<UserDashboard />} />
+                <Route path="/dashboard/inspector" element={<InspectorDashboard />} />
+                <Route path="/dashboard/engineer" element={<EngineerDashboard />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </div>
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
