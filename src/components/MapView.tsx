@@ -197,7 +197,7 @@ const MapView: React.FC<MapViewProps> = (props) => {
       {props.allRoutes && props.allRoutes.length > 0 && props.allRoutes.map((r, idx) => (
         <Polyline
           key={idx}
-          positions={r.map((latLng: any) => [latLng.lat(), latLng.lng()])}
+          positions={r}
           pathOptions={{ color: idx === 0 ? '#22c55e' : '#3b82f6', weight: idx === 0 ? 6 : 4, opacity: idx === 0 ? 0.9 : 0.5 }}
         />
       ))}
