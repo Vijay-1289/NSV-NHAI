@@ -12,6 +12,7 @@ import { getStreetViewImageUrl } from '@/services/streetViewService';
 import { getPavementConditionFromBackend } from '@/services/pavementService';
 import { HighwayService } from '@/services/highwayService';
 import { UserRole } from '@/integrations/supabase/types';
+import type { HighwayIssue } from '@/pages/InspectorDashboard';
 
 // Fix Leaflet's default icon path so markers show up
 L.Icon.Default.mergeOptions({
@@ -54,17 +55,17 @@ interface MapViewProps {
   setStart: (coords: [number, number] | null) => void;
   setEnd: (coords: [number, number] | null) => void;
   setRoute: (route: [number, number][]) => void;
-  allRoutes?: any[];
+  allRoutes?: [number, number][][];
   userRole: UserRole;
   onPinPlacement?: (location: [number, number], severity: string) => void;
-  onIssueSelect?: (issue: any) => void;
+  onIssueSelect?: (issue: HighwayIssue) => void;
 }
 
 const GOOGLE_API_KEY = 'AIzaSyA8lpEzD_QSfrtefxiVETxsTv7lnbFeWqY';
 
 const MapView: React.FC<MapViewProps> = (props) => {
   const [pavementResults, setPavementResults] = useState<any[]>([]);
-  const [highwayIssues, setHighwayIssues] = useState<any[]>([]);
+  const [highwayIssues, setHighwayIssues] = useState<HighwayIssue[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
   // Load highway issues on component mount
@@ -197,7 +198,7 @@ const MapView: React.FC<MapViewProps> = (props) => {
       {props.allRoutes && props.allRoutes.length > 0 && props.allRoutes.map((r, idx) => (
         <Polyline
           key={idx}
-          positions={r.overview_path.map((latLng: any) => [latLng.lat(), latLng.lng()])}
+          positions={r.map((latLng: any) => [latLng.lat(), latLng.lng()])}
           pathOptions={{ color: idx === 0 ? '#22c55e' : '#3b82f6', weight: idx === 0 ? 6 : 4, opacity: idx === 0 ? 0.9 : 0.5 }}
         />
       ))}

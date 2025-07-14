@@ -68,9 +68,10 @@ const Auth = () => {
           navigate('/');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Auth error:', error);
-      setError(error.message || 'Authentication failed');
+      if (error instanceof Error) setError(error.message || 'Authentication failed');
+      else setError('Authentication failed');
     } finally {
       setLoading(false);
     }

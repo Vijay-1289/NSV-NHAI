@@ -635,7 +635,7 @@ const UserDashboard: React.FC = () => {
             setStart={setStart}
             setEnd={setEnd}
             setRoute={setRoute}
-            allRoutes={allRoutes}
+            allRoutes={allRoutes.map(route => route.overview_path.map(latLng => [latLng.lat(), latLng.lng()]))}
             userRole={userRole}
             onPinPlacement={() => {}}
             onIssueSelect={handleIssueSelect}
