@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, GeoJSON, Popup, CircleMarker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import WeatherOverlay from "./WeatherOverlay";
 import TrafficOverlay from "./TrafficOverlay";
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -269,9 +268,6 @@ const MapView: React.FC<MapViewProps> = (props) => {
           </CircleMarker>
         )
       ))}
-      
-      {/* Weather Overlay */}
-      <WeatherOverlay center={[22.9734, 78.6569]} radius={100} gridSpacing={50} />
       
       {/* Traffic Overlay (only if route exists) */}
       {props.route.length > 1 && <TrafficOverlay route={props.route} />}
