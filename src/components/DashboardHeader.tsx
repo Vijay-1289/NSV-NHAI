@@ -49,7 +49,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) =>
         <div className="flex items-center space-x-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700">
+              <Button variant="outline" className="text-black font-semibold border border-white border-opacity-30 hover:bg-slate-200">
                 Switch Dashboard
               </Button>
             </DropdownMenuTrigger>
@@ -67,7 +67,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userRole }) =>
           </DropdownMenu>
           <Button 
             variant="outline" 
-            className="text-white border-slate-600 hover:bg-slate-700"
+            className="text-black font-semibold border border-white border-opacity-30 hover:bg-slate-200"
             onClick={handleLogout}
           >
             Logout
